@@ -149,8 +149,8 @@ Optimised by 3-stage heuristic (grid → dual annealing → Nelder-Mead), log-li
 Residual definition:
 $$e_i = Y_i - \hat\mu_i, \qquad \hat\mu_i = \beta_0 + \beta_1 \log(S_i - \hat\Delta_i)$$
 
-| Stress $S$ | $n_j$ | MAE | Max $|e_i|$ |
-|------------|-------|-----|-------------|
+| Stress $S$ | $n_j$ | MAE | Max $\lvert e_i \rvert$ |
+|------------|-------|-----|------------------------|
 | 0.675 | 15 | 0.0712 | 0.2431 |
 | 0.750 | 15 | 0.0884 | 0.2771 |
 | 0.825 | 15 | 0.1165 | 0.2027 |
