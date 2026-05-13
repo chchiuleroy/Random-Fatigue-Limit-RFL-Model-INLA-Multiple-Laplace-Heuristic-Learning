@@ -167,15 +167,35 @@ $$e_i = Y_i - \hat\mu_i, \qquad \hat\mu_i = \beta_0 + \beta_1 \log(S_i - \hat\De
 
 Run `python rfl_residuals_run.py` for the full per-observation table.
 
-### Single vs Multiple Laplace
+### Censoring Comparison (INLA-style, all scenarios)
 
-| Method | $\log L$ per obs (example) | Notes |
-|--------|---------------------------|-------|
-| Single Laplace (P&M style) | −1.9848 | 2nd-order Taylor at mode only |
-| Multiple Laplace (9-pt GH) | −1.9831 | Captures skewness/kurtosis of $h_i(\Delta)$ |
-| Improvement | +0.0018 | Accumulates to ~+0.13 over 75 observations |
+| Scenario | Censoring rate | $\hat\beta_0$ | $\hat\beta_1$ | $\hat\sigma$ | $\mathbb{E}[\hat\Delta]$ | $\ell$ |
+|----------|:--------------:|------:|------:|------:|------:|------:|
+| **[A] No censoring** | 0% | −9.370 | −8.348 | 0.295 | 0.531 | −72.869 |
+| **[B] Type I** (80th pct per stress) | 20% | −9.449 | −8.948 | 0.358 | 0.510 | −71.811 |
+| **[C] Hybrid I-II** (r=80%, T=global 75th pct) | 37.3% | −4.835 | −20.425 | 0.304 | 0.073 | −49.240 |
 
-Multiple Laplace consistently improves $\log L$ — the gain is small per observation but meaningful at the total-likelihood level, especially for observations far in the tails.
+**SE on $(β_0, β_1, \log\sigma)$:**
+
+| Scenario | SE($\beta_0$) | SE($\beta_1$) | SE($\log\sigma$) |
+|----------|:---:|:---:|:---:|
+| [A] No censoring | 0.284 | 0.243 | 0.306 |
+| [B] Type I 20% | 0.279 | 0.247 | 0.252 |
+| [C] Hybrid 37.3% | 0.189 | 0.741 | 0.291 |
+
+> **[C] Hybrid caveat:** at 37.3% censoring the estimates become unstable ($\hat\beta_1 = -20.4$, $\mathbb{E}[\hat\Delta] = 0.073$).  
+> The heavy censoring in the $S=0.675$ group (longest lives hit the cutoff first) leaves almost no  
+> information to identify $\Delta$, causing $\hat\beta_1$ to drift wildly. SE($\beta_1$) = 0.74 reflects this instability.
+
+### Single vs Multiple Laplace (full data, [A] parameters)
+
+| Method | Total $\log L$ | Per-obs average |
+|--------|:--------------:|:---------------:|
+| Single Laplace (mode-only) | −72.849 | −0.9713 |
+| Multiple Laplace (9-pt GH) | −72.869 | −0.9716 |
+| Difference | −0.020 | −0.00027 |
+
+The two approximations agree to within 0.02 on 75 observations — the Laplace scale $\tilde\sigma_i \approx 0.006$–$0.011$ is so small that higher-order GH corrections are negligible for this dataset. The dominant benefit of Multiple Laplace appears in heavy-tailed or more diffuse $g(\Delta)$ settings.
 
 ---
 
