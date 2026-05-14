@@ -104,6 +104,168 @@ regions of the likelihood surface are worth exploring.
 
 ---
 
+## Heuristic Learning — Core Concepts & Usage
+
+This project employs heuristic learning at **four levels**, from the innermost per-observation integral to the model-level complexity selection.
+
+### Overview
+
+| Level | Method | Location | Purpose |
+|-------|--------|----------|---------|
+| Integral (inner) | Adaptive Laplace curvature | `_multi_laplace()` | Self-calibrating GH quadrature nodes |
+| Outer optimisation | Random grid → Dual Annealing → Nelder-Mead | `heuristic_optimize()` | Non-convex 5D MLE |
+| EM initialisation | Multi-start random seeds | `rfl_profile.py`, `rfl_em.py` | Escape EM local optima |
+| Model selection | BIC over $K \in \{1,2,3,4\}$ | `rfl_em.py` | Automatic mixture complexity |
+
+---
+
+### 1. `heuristic_optimize()` — 3-Stage Outer Search
+
+The 5D parameter space $\theta = (\beta_0, \beta_1, \sigma, \mu_\Delta, \sigma_\Delta)$ is non-convex; gradient methods alone get trapped. `heuristic_optimize()` runs three stages in sequence, each warm-starting from the previous winner:
+
+```python
+def heuristic_optimize(Y, S, cens, n_grid=40, sa_maxiter=800, seed=0):
+    ...
+```
+
+**Stage 1 — Random Grid Search** (`n_grid=40`)
+
+Uniformly samples 40 candidate points from `_BOUNDS` and evaluates the log-likelihood at each. The best point seeds Stage 2.
+
+```python
+for _ in range(n_grid):
+    t = [rng.uniform(lo, hi) for lo, hi in _BOUNDS]
+    ll = loglik(t, Y, S, cens)
+    if ll > best_ll:
+        best_ll = ll; best_t = t[:]
+```
+
+**Stage 2 — Dual Annealing** (`sa_maxiter=800`)
+
+`scipy.optimize.dual_annealing` wraps **Generalised Simulated Annealing** (Tsallis statistics, Xiang et al. 1997) with an embedded **L-BFGS-B** local minimiser. This is the "heuristic learning" core: the adaptive temperature schedule learns which regions of the likelihood surface are worth revisiting and gradually narrows the acceptance window as the search converges.
+
+```python
+res_sa = dual_annealing(
+    lambda t: -loglik(t, Y, S, cens),
+    bounds=_BOUNDS,
+    x0=best_t,           # warm start from Stage 1
+    seed=seed,
+    maxiter=sa_maxiter,
+    minimizer_kwargs={'method': 'L-BFGS-B', 'bounds': _BOUNDS},
+    no_local_search=False,   # enables adaptive local refinement
+)
+```
+
+Key properties of the adaptive temperature schedule:
+- Uses Tsallis acceptance criterion (heavier tails than Boltzmann → more exploration)
+- Temperature anneals according to a power-law schedule; effective "learning rate" decreases as promising basins are found
+- Each accepted move that improves the local best triggers an L-BFGS-B polish
+
+**Stage 3 — Nelder-Mead Polish** (`maxiter=15000`, `xatol=1e-7`)
+
+Derivative-free downhill simplex from the SA solution. Corrects any residual bias from the discrete SA step structure without requiring gradient information.
+
+```python
+res_nm = minimize(
+    lambda t: -loglik(t, Y, S, cens),
+    x0=res_sa.x,
+    method='Nelder-Mead',
+    options={'maxiter': 15000, 'xatol': 1e-7, 'fatol': 1e-7},
+)
+```
+
+**Why three stages?**
+
+| Stage | Role | Without it |
+|-------|------|-----------|
+| Random grid | Coarse landscape survey | SA starts in a random basin, may never reach the global region |
+| Dual Annealing | Global escape + local refinement | Nelder-Mead alone gets trapped; grid alone too coarse |
+| Nelder-Mead | Sub-grid convergence | SA final step is discrete; leaves $O(10^{-4})$ residual error |
+
+---
+
+### 2. Adaptive Laplace Scale — Self-Calibrating Inner Quadrature
+
+Inside `_multi_laplace()`, the Gauss–Hermite nodes are **not fixed** — they adapt to the curvature of each observation's posterior:
+
+```python
+# Step 1: find per-observation posterior mode Δ̂ᵢ
+res = minimize_scalar(lambda d: -_log_h(d, ...), bounds=(1e-6, s-1e-4), method='bounded')
+d_hat = res.x
+
+# Step 2: estimate curvature via central difference
+eps  = max(d_hat * 0.005, 5e-6)
+kappa = max(-(lhp - 2*lh0 + lhm) / eps**2, 1e-6)  # second derivative of log h
+sig_t = 1.0 / np.sqrt(kappa)                         # adaptive Laplace σ̃ᵢ
+
+# Step 3: place 9 GH nodes centred at mode, scaled by σ̃ᵢ
+d_pts = d_hat + sig_t * _GHX   # _GHX: physicists' GH abscissae
+```
+
+For a flat posterior (large $\tilde\sigma_i$), nodes spread widely; for a sharp posterior, they cluster tightly. This means the quadrature self-calibrates per observation — a key heuristic that avoids the systematic bias of fixed-node integration in the tails.
+
+---
+
+### 3. Multi-Start EM — Escaping Local Optima
+
+The EM algorithm is sensitive to initialisation. Both `rfl_profile.py` and `rfl_em.py` run multiple random starts and keep the best log-likelihood:
+
+| File | Random seeds | Comment |
+|------|:---:|---------|
+| `rfl_profile.py` | 15 | Higher count for K=2 semi-parametric NPMLE |
+| `rfl_em.py` | 8 | Grid over K=1..4, 8 starts each |
+
+```python
+for seed in range(15):
+    np.random.seed(seed)
+    d = np.sort(np.random.uniform(0.30, 0.62, 2))   # random Δ support points
+    res = em_full(Y_r, S_r, K=2, d_init=d, max_iter=2000, tol=1e-9)
+    if res['ll'] > best_ll:
+        best_ll = res['ll']; best_r = res
+```
+
+This is a classical **random restart heuristic**: inexpensive given the fast E- and M-step implementations, and practically guarantees convergence to the global NPMLE for $K \le 4$.
+
+---
+
+### 4. BIC-Driven Automatic Model Selection
+
+`rfl_em.py` automatically selects the number of NPMLE support points $K$ via BIC:
+
+$$\mathrm{BIC}(K) = -2\,\hat\ell_K + (3 + 2K - 1)\log n$$
+
+```python
+for K in [1, 2, 3, 4]:
+    # run EM with 8 random starts, pick best log-likelihood
+    ...
+    p_K  = 3 + 2*K - 1       # β₀, β₁, σ, plus (πₖ, Δₖ) × K minus 1 constraint
+    bic  = -2*best_res['ll'] + p_K * np.log(n)
+    if bic < best_bic:
+        best_bic = bic; best_K = K
+```
+
+The heuristic aspect: BIC penalises model complexity adaptively — heavier penalty for larger $n$, so the selected $K$ automatically scales with the available information rather than requiring manual tuning.
+
+---
+
+### Heuristic Learning — Flow Summary
+
+```
+rfl_inla.py  ─── outer: heuristic_optimize()
+│                         ├─ Stage 1: Random grid (40 pts)  ─→ coarse basin
+│                         ├─ Stage 2: Dual Annealing (800)  ─→ adaptive global search
+│                         └─ Stage 3: Nelder-Mead           ─→ precision polish
+│
+└──────────── inner: _multi_laplace()
+                        ├─ minimize_scalar → posterior mode Δ̂ᵢ
+                        └─ curvature → adaptive σ̃ᵢ → 9-pt GH nodes
+
+rfl_profile.py ── EM: 15-start random initialisation
+rfl_em.py      ── EM: 8-start × K∈{1..4}, BIC auto-selects best K
+```
+
+---
+
 ## Censoring Schemes
 
 ### Type I (fixed cutoff)
