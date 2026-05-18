@@ -486,7 +486,17 @@ print(f"SE(b1) = {se_full['se_b1']:.4f}  SE(sig_d) = {se_full['se_sig_d']:.4f}")
 | ASSLA-INLA norefit | *run* | *run* | *run* | Full 5D Hessian, fast |
 | SSLA-INLA refit | *run* | *run* | *run* | Full 5D, most faithful |
 
-Run `python ssla_se.py` to populate the last three rows with live estimates.
+**Actual results on n=75 data** (see `_test_ssla.py`):
+
+| Method | SE(β₀) | SE(β₁) | SE(σ) |
+|--------|--------|--------|-------|
+| Profile SE | 0.580 | 1.486 | 0.054 |
+| Louis SE (EM) | 0.360 | 0.193 | 0.052 |
+| ASSLA-EM | 0.204 | **0.589** | ~~0.563~~ ⚠️ |
+| ASSLA-INLA 5D Hessian | 0.436 | **1.052** | 0.152 |
+
+> ⚠️ ASSLA-EM SE(σ) is **unreliable**: self-predicted Y_self has zero residuals, so σ collapses on refit (σ_tilde ≈ 0.033). Use the 5D Hessian for σ.  
+> The 5D Hessian SE(β₁) = 1.052 vs Profile 1.486: remaining gap reflects model difference (LogNormal vs NPMLE g(Δ)), not method failure.
 
 ### Why SSLA Instead of Bootstrap?
 
