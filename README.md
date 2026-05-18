@@ -482,9 +482,9 @@ print(f"SE(b1) = {se_full['se_b1']:.4f}  SE(sig_d) = {se_full['se_sig_d']:.4f}")
 |--------|--------|--------|-------|-------|
 | Profile SE (rfl_profile.py) | 0.580 | **1.486** | 0.054 | Gold standard, profile likelihood |
 | Louis SE (rfl_em.py) | 0.360 | **0.193** | 0.052 | 7.7× underestimate of SE(β₁) |
-| ASSLA-EM (`ssla_se.py`) | *run* | *run* | *run* | Deterministic, no Bootstrap |
-| ASSLA-INLA norefit | *run* | *run* | *run* | Full 5D Hessian, fast |
-| SSLA-INLA refit | *run* | *run* | *run* | Full 5D, most faithful |
+| ASSLA-EM (`ssla_se.py`) | 0.204 | **0.589** | ~~0.563~~ ⚠️ | SE(σ) unreliable: σ collapses on noiseless refit |
+| ASSLA-INLA norefit (`ssla_se.py`) | 0.436 | **1.050** | 0.153 | Full 5D Hessian; SE(β₁) 4.3× > 3×3 Hessian |
+| SSLA-INLA refit (`ssla_se.py`) | 0.117 | **0.353** | ~~0.285~~ ⚠️ | Refit on noiseless Y_self degrades estimates |
 
 **Actual results on n=75 data** (see `_test_ssla.py`):
 
@@ -495,8 +495,9 @@ print(f"SE(b1) = {se_full['se_b1']:.4f}  SE(sig_d) = {se_full['se_sig_d']:.4f}")
 | ASSLA-EM | 0.204 | **0.589** | ~~0.563~~ ⚠️ |
 | ASSLA-INLA 5D Hessian | 0.436 | **1.052** | 0.152 |
 
-> ⚠️ ASSLA-EM SE(σ) is **unreliable**: self-predicted Y_self has zero residuals, so σ collapses on refit (σ_tilde ≈ 0.033). Use the 5D Hessian for σ.  
-> The 5D Hessian SE(β₁) = 1.052 vs Profile 1.486: remaining gap reflects model difference (LogNormal vs NPMLE g(Δ)), not method failure.
+> **Winner: ASSLA-INLA norefit** — SE(β₁) = 1.050, closest to Profile 1.486 (gap reflects model difference: LogNormal vs NPMLE).  
+> ⚠️ SE(σ) is unreliable in both ASSLA-EM and SSLA-INLA refit: self-predicted Y_self has zero residuals, σ collapses on refit.  
+> ⚠️ SSLA-INLA refit is **worse** than norefit for β₁ (0.353 < 1.050): refitting on noiseless data degrades estimates. The ASSLA approximation (no refit) is the recommended approach.
 
 ### Why SSLA Instead of Bootstrap?
 
