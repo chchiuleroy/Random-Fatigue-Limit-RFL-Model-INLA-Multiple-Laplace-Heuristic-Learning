@@ -24,12 +24,17 @@ SSLA philosophy (adapted to SE):
    deterministic, sampling-free alternative to Bootstrap (R=500).
 
 Empirical results on Pascual & Meeker (1999) n=75 data:
-  Direction A (ASSLA-EM):
-    SE(b0)=0.204, SE(b1)=0.589 — b1 improved vs Louis (0.193), still below Profile (1.486)
-    SE(sig) is NOT reliable: Y_self has zero noise, so refit sigma collapses to ~0.03
-  Direction B (5D Hessian, assla_se_inla_norefit):
-    SE(b0)=0.436, SE(b1)=1.052 — 4.3× larger than 3×3 Hessian (0.243), approaching Profile (1.486)
-    SE(sig)=0.152 (not directly comparable to Profile 0.054 — different model)
+
+  Method                  SE(b0)  SE(b1)  SE(sig)
+  Profile SE              0.580   1.486   0.054   <- gold standard
+  Louis SE (EM)           0.360   0.193   0.052   <- 7.7x underestimate
+  ASSLA-EM                0.204   0.589  *0.563*  <- sig unreliable (collapses)
+  ASSLA-INLA norefit      0.436   1.050   0.153   <- RECOMMENDED for b0/b1
+  SSLA-INLA refit         0.117   0.353  *0.285*  <- WORSE than norefit (noiseless refit)
+
+  Recommendation: use assla_se_inla_norefit() — the full 5D Hessian without refitting
+  gives SE(b1)=1.050, 4.3x larger than the 3x3 nuisance-fixed Hessian (0.243).
+  Refitting on noiseless Y_self (SSLA refit) actually degrades the estimate.
 
 Reference:
   Rodemann J., Marquard A., Augustin T., Caprio M. (2026).
