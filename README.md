@@ -159,7 +159,7 @@ $$\hat\Delta_i = \arg\max_\Delta \bigl[\log f(y_i \mid \Delta) + \log g(\Delta)\
 
 3. **Multiple Laplace** (9-node Gauss–Hermite centred at mode):
 
-$$L_i \;\approx\; \tilde\sigma_i \sum_{j=1}^{9} w_j^{\mathrm{GH}}\, e^{x_j^2/2}\, h_i(\hat\Delta_i + \tilde\sigma_i\, x_j)$$
+$$L_i \approx\ \tilde\sigma_i \sum_{j=1}^{9} w_j^{\mathrm{GH}}\ e^{x_j^2/2}\ h_i(\hat\Delta_i + \tilde\sigma_i\, x_j)$$
 
 The $e^{x_j^2/2}$ factor cancels the Gaussian kernel of the Laplace proposal (importance-weighted GH).  
 Single Laplace = zeroth-order limit of this ($j=1$, just the mode contribution).
