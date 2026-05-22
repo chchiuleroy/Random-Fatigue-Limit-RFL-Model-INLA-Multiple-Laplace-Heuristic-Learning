@@ -358,12 +358,12 @@ Specimens are right-censored at a pre-set time $T_j$ per stress level:
 
 $$\delta_i = \mathbf{1}[Y_i > T_j], \quad \tilde Y_i = \min(Y_i, T_j)$$
 
-The censored likelihood contribution replaces $f(y_i \mid \Delta)$ with $P(Y_i > T_j \mid \Delta) = \bar\Phi\!\bigl(\tfrac{T_j - \mu(S_i,\Delta)}{\sigma}\bigr)$.
+The censored likelihood contribution replaces $f(y_i \mid \Delta)$ with $P(Y_i > T_j \mid \Delta) = \bar\Phi\\bigl(\tfrac{T_j - \mu(S_i,\Delta)}{\sigma}\bigr)$.
 
 ### Hybrid Type I-II (per stress level)
 Stop at the earlier of the $r$-th failure or fixed time $T$:
 
-$$T^*_j = \min\!\bigl(X_{r_j{:}n_j},\; T\bigr)$$
+$$T^*_j = \min\\bigl(X_{r_j{:}n_j},\ T\bigr)$$
 
 All specimens surviving past $T^*_j$ are right-censored at $T^*_j$.  
 This generalises Type I (set $r_j = n_j$) and Type II (set $T = \infty$).
