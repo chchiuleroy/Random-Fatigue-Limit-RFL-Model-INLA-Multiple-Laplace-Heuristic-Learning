@@ -38,7 +38,7 @@ where $Y_i = \log N_i$ is the log-life.
 
 The marginal likelihood requires integrating out $\Delta$:
 
-$$L_i(\theta) = \int_0^{S_i} f(y_i \mid \Delta, S_i)\; g(\Delta;\, \mu_\Delta, \sigma_\Delta)\; d\Delta$$
+$$L_i(\theta) = \int_0^{S_i} f(y_i \mid \Delta, S_i)\ g(\Delta\, \mu_\Delta, \sigma_\Delta)\ d\Delta$$
 
 ---
 
