@@ -1,0 +1,83 @@
+=================================================================
+SEV + INLA (9-pt GH)  n=75  SEV conditional + LogNormal g
+=================================================================
+
+Warm-start hint from SEV MCEM:
+  b0=-8.4800  b1=-6.5920  sig=0.2680  mu_d=-0.5400  sig_d=0.0290
+  ll at warm-start = -74.7583
+
+Running optimizer (L-BFGS-B + NM from MCEM warm-start)...
+  [BFGS ] best ll = -72.9279
+  [NM   ] best ll = -72.8796
+
+=================================================================
+FINAL RESULTS
+=================================================================
+  b0=-9.31577  b1=-8.53437  sig=0.18958
+  mu_d=-0.64511  sig_d=0.03553  E[Delta]=0.52493
+  log-lik = -72.8796
+
+  ASSE  = 5.7576
+  MAE   = 0.07677
+  MedAE = 0.06357
+
+Per-stress ASSE:
+       S    n     ASSE      MAE  Normal+INLA MAE
+   0.675   15   0.7249   0.0483           0.0712
+   0.750   15   0.8743   0.0583           0.0884
+   0.825   15   1.1322   0.0755           0.1165
+   0.900   15   1.1476   0.0765           0.1268
+   0.950   15   1.8786   0.1252           0.1720
+
+Reference ASSE table:
+  INLA (Normal+GH)         : 8.63
+  SEV  MCEM (rfl_mcem.py)  : 10.89
+  Chiu (2005) thesis       : 10.80
+  Pascual & Meeker (1999)  : 12.84
+  Normal NPMLE K=4         : 11.71
+  SEV NPMLE K=4            : 13.64
+  SEV + INLA (this)        : 5.76
+
+
+=================================================================
+CENSORING COMPARISON ¡X SEV + INLA (9-pt GH)
+Warm-start: [A] MLE theta for each censored scenario
+=================================================================
+
+  Scen Description                                  ASSE    log-lik        b0        b1     sig    sig_d
+  ----  ------------------------------------------  ------  ---------  --------  --------  ------  -------
+  [A]  No censoring          (n_obs=75, n_cens= 0)   5.76   -72.8796   -9.3158   -8.5344  0.1896  0.03553
+              S  n_obs       MAE
+          0.675     15   0.04833
+          0.750     15   0.05829
+          0.825     15   0.07548
+          0.900     15   0.07650
+          0.950     15   0.12524
+
+  Optimising scenario [B]...
+  [BFGS ] best ll = -72.1779
+  [NM   ] best ll = -72.0613
+  [B]  Type I 80th pct       (n_obs=60, n_cens=15, 20.0%)   5.29   -72.0613   -9.4720   -9.5000  0.1905  0.03839
+              S  n_obs       MAE
+          0.675     12   0.04651
+          0.750     12   0.05941
+          0.825     12   0.06528
+          0.900     12   0.05965
+          0.950     12   0.10972
+
+  Optimising scenario [C]...
+  [BFGS ] best ll = -51.0229
+  [NM   ] best ll = -49.3168
+  [C]  Hybrid r=80%,T=75th   (n_obs=47, n_cens=28, 37.3%)  17.97   -49.3168   -5.1311  -19.9184  0.1760  0.21107
+              S  n_obs       MAE
+          0.750     11   0.06599
+          0.825     12   0.06938
+          0.900     12   0.05346
+          0.950     12   0.08824
+
+¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+  Three-method summary (ASSE on uncensored observations)
+¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w¢w
+  Method                          [A] 0%   [B] 20%   [C] 37%
+  Normal+INLA (rfl_inla.py)         8.63       n/a   crashed
+  SEV+INLA (this)                 see above

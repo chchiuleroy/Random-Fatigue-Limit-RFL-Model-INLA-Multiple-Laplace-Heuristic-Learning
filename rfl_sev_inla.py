@@ -216,3 +216,79 @@ if __name__ == '__main__':
     print(f"  Normal NPMLE K=4         : 11.71")
     print(f"  SEV NPMLE K=4            : 13.64")
     print(f"  SEV + INLA (this)        : {asse:.2f}")
+
+    # ──────────────────────────────────────────────────────────────
+    # Censoring scenarios — mirrors rfl_inla.py [A][B][C]
+    # Warm-start: [A] MLE theta (most reliable for nearby censoring)
+    # ──────────────────────────────────────────────────────────────
+    def _apply_hybrid_censoring(Y, S, r_frac=0.80, T_cutoff=None):
+        """T*_j = min(X_{r_j:n_j}, T_j) per stress level."""
+        cens  = np.zeros(len(Y), bool)
+        Y_obs = Y.copy()
+        for sv in np.unique(S):
+            idx = np.where(S == sv)[0]
+            n_j = len(idx)
+            r_j = int(np.ceil(r_frac * n_j))
+            x_r = np.sort(Y[idx])[min(r_j - 1, n_j - 1)]
+            T_st = min(x_r, T_cutoff) if T_cutoff is not None else x_r
+            mask = Y[idx] > T_st
+            cens[idx[mask]]  = True
+            Y_obs[idx[mask]] = T_st
+        return Y_obs, cens
+
+    print("\n\n" + "=" * 65)
+    print("CENSORING COMPARISON — SEV + INLA (9-pt GH)")
+    print("Warm-start: [A] MLE theta for each censored scenario")
+    print("=" * 65)
+
+    # [B] Type I: censor at 80th percentile per stress (~20%)
+    Y_B    = Y_r.copy(); cens_B = np.zeros(n, bool)
+    for sv in stresses:
+        idx  = np.where(S_r == sv)[0]
+        T_j  = np.quantile(Y_r[idx], 0.80)
+        mask = Y_r[idx] > T_j
+        cens_B[idx[mask]] = True
+        Y_B[idx[mask]]    = T_j
+
+    # [C] Hybrid I-II: r=80%, T = global 75th percentile
+    T_hyb       = np.quantile(Y_r, 0.75)
+    Y_C, cens_C = _apply_hybrid_censoring(Y_r, S_r, r_frac=0.80, T_cutoff=T_hyb)
+
+    scenarios = [
+        ('A', Y_r,  S_r, cens_r, f'No censoring          (n_obs=75, n_cens= 0)'),
+        ('B', Y_B,  S_r, cens_B, f'Type I 80th pct       (n_obs={( ~cens_B).sum():2d}, n_cens={cens_B.sum():2d}, {cens_B.mean():.1%})'),
+        ('C', Y_C,  S_r, cens_C, f'Hybrid r=80%,T=75th   (n_obs={(~cens_C).sum():2d}, n_cens={cens_C.sum():2d}, {cens_C.mean():.1%})'),
+    ]
+
+    x0_cens = theta   # warm-start from [A] MLE
+
+    print(f"\n  {'Scen':<4} {'Description':<42} {'ASSE':>6}  {'log-lik':>9}  "
+          f"{'b0':>8}  {'b1':>8}  {'sig':>6}  {'sig_d':>7}")
+    print(f"  {'-'*4}  {'-'*42}  {'-'*6}  {'-'*9}  {'-'*8}  {'-'*8}  {'-'*6}  {'-'*7}")
+
+    for label, Y_sc, S_sc, cens_sc, desc in scenarios:
+        if label == 'A':
+            th_sc, ll_sc = theta, ll          # already computed
+        else:
+            print(f"\n  Optimising scenario [{label}]...")
+            th_sc, ll_sc = optimize(Y_sc, S_sc, cens_sc, x0=x0_cens)
+            x0_cens = th_sc                   # chain warm-start A→B→C
+
+        asse_sc, mae_sc, _, ae_sc, _ = compute_asse(Y_sc, S_sc, cens_sc, th_sc)
+        b0_, b1_, ls_, md_, lsd_ = th_sc
+        print(f"  [{label}]  {desc:<42} {asse_sc:6.2f}  {ll_sc:9.4f}  "
+              f"{b0_:8.4f}  {b1_:8.4f}  {np.exp(ls_):6.4f}  {np.exp(lsd_):7.5f}")
+
+        # Per-stress breakdown
+        print(f"         {'S':>6}  {'n_obs':>5}  {'MAE':>8}")
+        for sv in stresses:
+            idx_s  = (S_sc == sv) & (~cens_sc)
+            if idx_s.sum() == 0: continue
+            print(f"         {sv:6.3f}  {idx_s.sum():5d}  {ae_sc[idx_s].mean():8.5f}")
+
+    print("\n" + "─" * 65)
+    print("  Three-method summary (ASSE on uncensored observations)")
+    print("─" * 65)
+    print(f"  {'Method':<30} {'[A] 0%':>7}  {'[B] 20%':>8}  {'[C] 37%':>8}")
+    print(f"  {'Normal+INLA (rfl_inla.py)':<30} {'8.63':>7}  {'n/a':>8}  {'crashed':>8}")
+    print(f"  {'SEV+INLA (this)':<30}  see above")
