@@ -317,7 +317,7 @@ This is a classical **random restart heuristic**: inexpensive given the fast E- 
 
 `rfl_em.py` automatically selects the number of NPMLE support points $K$ via BIC:
 
-$$\mathrm{BIC}(K) = -2\,\hat\ell_K + (3 + 2K - 1)\log n$$
+$$\mathrm{BIC}(K) = -2\\hat\ell_K + (3 + 2K - 1)\log n$$
 
 ```python
 for K in [1, 2, 3, 4]:
