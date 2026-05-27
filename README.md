@@ -805,11 +805,11 @@ The remaining integral over $\Delta_i$ is handled by a **trapezoidal grid** (400
 
 **E-step** — for each observation $i$ and GMM component $k$:
 
-$$\log L_{ik} = \log \int f_\text{Burr}(y_i \mid \delta)\, \mathcal{N}(\delta;\mu_k,\sigma_k^2)\, d\delta \quad \text{(trapezoidal)}$$
+$$\log L_{ik} = \log \int f_\text{Burr}(y_i \mid \delta)\, \mathcal{N}(\delta;\mu_k,\sigma_k^2)\ d\delta \quad \text{(trapezoidal)}$$
 
-$$r_{ik} = \frac{\pi_k\, L_{ik}}{\sum_{k'} \pi_{k'} L_{ik'}}, \quad E[\Delta_i \mid Y_i, Z_i=k] = \frac{\sum_j w_j^{(k)} \delta_j}{\sum_j w_j^{(k)}}$$
+$$r_{ik} = \frac{\pi_k\, L_{ik}}{\sum_{k'} \pi_{k'} L_{ik'}} \quad E[\Delta_i \mid Y_i, Z_i=k] = \frac{\sum_j w_j^{(k)} \delta_j}{\sum_j w_j^{(k)}}$$
 
-where $w_j^{(k)} \propto f_\text{Burr}(y_i \mid \delta_j)\, \mathcal{N}(\delta_j;\mu_k,\sigma_k^2)$ are the per-grid-point weights.
+where $w_j^{(k)} \propto f_\text{Burr}(y_i \mid \delta_j)\ \mathcal{N}(\delta_j;\mu_k,\sigma_k^2)$ are the per-grid-point weights.
 
 **M-step GMM** — closed form given soft assignments $r_{ik}$ and posterior moments:
 
