@@ -792,8 +792,8 @@ AIC slightly favours SEV+INLA. The 0.004-nats log-likelihood gain from the extra
 **4-level generative model**:
 
 1. $\Delta_i \sim \sum_{k=1}^K \pi_k\, \mathcal{N}(\mu_k, \sigma_k^2)$ — GMM prior on fatigue limit, EM-estimated
-2. $U_i \mid \Delta_i \sim \mathrm{Gamma}\!\bigl(a,\; a/(S_i-\Delta_i)^\alpha\bigr)$ — Gamma conjugate (closed form)
-3. $Y_i \mid U_i \sim \mathrm{SEV}(b_0 - \sigma \log U_i,\; \sigma)$ — conditional SEV
+2. $U_i \mid \Delta_i \sim \mathrm{Gamma}\!\bigl(a,\ a/(S_i-\Delta_i)^\alpha\bigr)$ — Gamma conjugate (closed form)
+3. $Y_i \mid U_i \sim \mathrm{SEV}(b_0 - \sigma \log U_i,\ \sigma)$ — conditional SEV
 
 Marginalising out $U_i$ in layers (2)+(3) gives the **Burr XII conditional likelihood**:
 
