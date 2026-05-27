@@ -32,7 +32,7 @@ $\Delta$ varies across specimens and is **never directly observed**.
 
 The RFL model ([Pascual & Meeker 1999](https://doi.org/10.1080/00401706.1999.10485928)) treats $\Delta$ as a random variable:
 
-$$Y_i \mid \Delta \\sim\ \mathcal{N}\!\bigl(\beta_0 + \beta_1 \log(S_i - \Delta),\ \sigma^2\bigr), \qquad \Delta \perp\ Y_i \mid S_i$$
+$$Y_i \mid \Delta \\sim\ \mathcal{N}\\bigl(\beta_0 + \beta_1 \log(S_i - \Delta),\ \sigma^2\bigr), \qquad \Delta \perp\ Y_i \mid S_i$$
 
 where $Y_i = \log N_i$ is the log-life.
 
