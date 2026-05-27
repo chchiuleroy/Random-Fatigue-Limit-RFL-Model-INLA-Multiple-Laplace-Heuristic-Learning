@@ -48,7 +48,7 @@ $$L_i(\theta) = \int_0^{S_i} f(y_i \mid \Delta, S_i)\ g(\Delta\, \mu_\Delta, \si
 
 Replaces the parametric $g(\Delta)$ with a **nonparametric MLE (NPMLE)**:
 
-$$\hat{G} = \sum_{k=1}^{K} \hat\pi_k\, \delta_{\hat\Delta_k}$$
+$$\hat{G} = \sum_{k=1}^{K} \hat\pi_k\ \delta_{\hat\Delta_k}$$
 
 By Lindsay (1983), the NPMLE of a mixture distribution is always a discrete distribution with at most $n$ support points. This collapses the integral into a finite sum — **no Laplace approximation needed**.
 
