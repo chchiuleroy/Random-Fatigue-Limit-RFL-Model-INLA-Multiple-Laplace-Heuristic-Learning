@@ -1178,7 +1178,7 @@ $$\text{ASSE}_\text{Bayes} = \mathbb{E}_{\theta \sim p(\theta|y)}\!\left[\sum_i\
 **File:** `rfl_sev_inla_mix.py`  
 **Motivation:** The unimodal LogNormal $g(\Delta)$ may be misspecified (NPMLE suggests K=2–3 support points for Normal, K=3 for SEV). A K-component LogNormal mixture bridges the discrete NPMLE structure with the continuous posterior flexibility of INLA.
 
-**Model:** $g(\Delta) = \sum_{k=1}^K \pi_k \operatorname{LogNormal}(\mu_k, \sigma_k^2)$, SEV conditional, 9-pt GH per component.
+**Model:** $$g(\Delta) = \sum_{k=1}^K \pi_k \operatorname{LogNormal}(\mu_k, \sigma_k^2)$$, SEV conditional, 9-pt GH per component.
 
 **Results** (consistent fast-GH comparison across K):
 
