@@ -42,7 +42,7 @@ where $Y_i$ is the lifetime (cycles to failure).
 
 The marginal likelihood requires integrating out $\Delta$:
 
-$$L_i(\theta) = \int_0^{S_i} f(\ln Y_i \mid \Delta, S_i)\ g(\Delta;\ \mu_\Delta, \sigma_\Delta)\ d\Delta$$
+$$L_i(\theta) = \int_0^{S_i} f(\ln Y_i \mid \Delta)\ g(\Delta;\ \mu_\Delta, \sigma_\Delta)\ d\Delta$$
 
 ---
 
