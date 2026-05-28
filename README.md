@@ -36,7 +36,7 @@ $\Delta$ varies across specimens and is **never directly observed**.
 
 The RFL model ([Pascual & Meeker 1999](https://doi.org/10.1080/00401706.1999.10485928)) treats $\Delta$ as a random variable:
 
-$$\ln Y_i = \beta_0 + \beta_1 \ln(S_i - \Delta) + \varepsilon_i, \qquad \varepsilon_i \sim \mathcal{N}(0,\, \sigma^2), \quad \Delta \perp\ \varepsilon_i $$
+$$\ln Y_i = \beta_0 + \beta_1 \ln(S_i - \Delta) + \varepsilon_i, \qquad \varepsilon_i \sim \mathcal{N}(0, sigma^2), \quad \Delta \perp\ \varepsilon_i $$
 
 where $Y_i$ is the lifetime (cycles to failure).
 
