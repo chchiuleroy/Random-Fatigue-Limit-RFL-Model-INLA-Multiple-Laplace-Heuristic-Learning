@@ -42,7 +42,7 @@ where $Y_i$ is the lifetime (cycles to failure).
 
 The marginal likelihood requires integrating out $\Delta$:
 
-$$L_i(\theta) = \int_0^{S_i} f(ln y_i \mid \Delta, S_i)\ g(\Delta;\ \mu_\Delta, \sigma_\Delta)\ d\Delta$$
+$$L_i(\theta) = \int_0^{S_i} f(\ln Y_i \mid \Delta, S_i)\ g(\Delta;\ \mu_\Delta, \sigma_\Delta)\ d\Delta$$
 
 ---
 
@@ -161,7 +161,7 @@ For each observation $i$:
 
 1. Find the **posterior mode** of $\Delta$:
 
-$$\hat\Delta_i = \arg\max_\Delta \bigl[\log f(y_i \mid \Delta) + \log g(\Delta)\bigr]$$
+$$\hat\Delta_i = \arg\max_\Delta \bigl[\log f(\ln Y_i \mid \Delta) + \log g(\Delta)\bigr]$$
 
 2. Compute **Laplace curvature**: $\tilde\sigma_i = 1/\sqrt{-\partial^2 \log h_i(\hat\Delta_i)/\partial\Delta^2}$
 
@@ -366,7 +366,7 @@ Specimens are right-censored at a pre-set time $T_j$ per stress level:
 
 $$\delta_i = \mathbf{1}[Y_i > T_j], \quad \tilde Y_i = \min(Y_i, T_j)$$
 
-The censored likelihood contribution replaces $f(y_i \mid \Delta)$ with $P(Y_i > T_j \mid \Delta) = \bar\Phi\\bigl(\tfrac{T_j - \mu(S_i,\Delta)}{\sigma}\bigr)$.
+The censored likelihood contribution replaces $f(\ln Y_i \mid \Delta)$ with $P(Y_i > T_j \mid \Delta) = \bar\Phi\\bigl(\tfrac{\ln T_j - \mu(S_i,\Delta)}{\sigma}\bigr)$.
 
 ### Hybrid Type I-II (per stress level)
 Stop at the earlier of the $r$-th failure or fixed time $T$:
@@ -463,7 +463,7 @@ ASSE‡ (per-obs posterior mean, double-dipping) is computed on **uncensored obs
 
 **Why GH degenerates under heavy censoring:**
 
-The GH approach requires finding $\hat\Delta_i = \arg\max_\Delta [\log f(y_i|\Delta) + \log g(\Delta)]$ per observation. When $S=0.675$ specimens are mostly censored, this mode search becomes ill-conditioned — the censored log-likelihood $\log S(T_j|\Delta)$ is flat over $\Delta$ near the boundary, and the outer L-BFGS-B optimizer drifts $\beta_1$ toward $-\infty$ to compensate.
+The GH approach requires finding $\hat\Delta_i = \arg\max_\Delta [\log f(\ln Y_i|\Delta) + \log g(\Delta)]$ per observation. When $S=0.675$ specimens are mostly censored, this mode search becomes ill-conditioned — the censored log-likelihood $\log S(T_j|\Delta)$ is flat over $\Delta$ near the boundary, and the outer L-BFGS-B optimizer drifts $\beta_1$ toward $-\infty$ to compensate.
 
 **Why EM-GMM remains stable:**
 
@@ -655,10 +655,10 @@ rfl_sev.py              — SEV + NPMLE: Weibull conditional (weakest-link physi
 rfl_mcem.py             — SEV + MCEM: continuous LogNormal g(Delta), rejection sampling E-step
                           ASSE = 10.89 (≈ Chiu thesis), beats all discrete NPMLE variants
           ↓
-rfl_inla.py             — Normal + INLA: 9-pt Gauss-Hermite + dual-annealing, ASSE = 8.63
+rfl_inla.py             — Normal + INLA: 9-pt Gauss-Hermite + dual-annealing, per-obs residual = 8.63
           ↓
 rfl_sev_inla.py ⭐      — SEV + INLA: SEV conditional + 9-pt GH + dual-annealing
-                          ASSE = 5.76 (best result, -33% vs Normal+INLA)
+                          per-obs residual = 5.76 (best in-sample, -33% vs Normal+INLA)
           ↓
 ssla_se.py              — SSLA-based SE: deterministic fix for Louis 7.7x underestimation + full 5D UQ
           ↓
@@ -671,7 +671,7 @@ rfl_burr2.py            — Burr XII MLE v2 (5-param): stress-dependent prior b_
           ↓
 rfl_burr_inla.py        — Burr XII + INLA (6-param): Burr XII as conditional f(y|Delta_i),
                           INLA integrates Delta_i; nests SEV+INLA (a->inf)
-                          a=23.2, ASSE=5.74, log-lik=-72.884 (AIC=157.77 vs SEV+INLA 155.76)
+                          a=23.2, per-obs residual=5.74, log-lik=-72.884 (AIC=157.77 vs SEV+INLA 155.76)
                           Conclusion: SEV+INLA (5 params) still preferred by AIC
           ↓
 rfl_burr_em.py          — Burr XII + EM-GMM: K-component Gaussian mixture prior on Delta_i,
@@ -781,7 +781,7 @@ These two scripts explore whether **the Gamma-conjugate closed form** can replac
 
 The SEV density rewrites as:
 
-$$f(y_i \mid \Delta_i) = \frac{c_i}{\sigma} \cdot V_i \cdot e^{-c_i V_i}, \qquad V_i = (S_i - \Delta_i)^{-\beta_1/\sigma},\quad c_i = e^{(y_i - \beta_0)/\sigma}$$
+$$f(\ln Y_i \mid \Delta_i) = \frac{c_i}{\sigma} \cdot V_i \cdot e^{-c_i V_i}, \qquad V_i = (S_i - \Delta_i)^{-\beta_1/\sigma},\quad c_i = e^{(\ln Y_i - \beta_0)/\sigma}$$
 
 This is a **Gamma(2, $c_i$) kernel** in $V_i$. Placing a Gamma$(\alpha_0, b)$ prior on $V_i$ and integrating out gives the **Burr Type XII** marginal:
 
@@ -806,7 +806,7 @@ This substitution yields a clean closed-form marginal with **all 5 parameters ap
 $$\boxed{L_i = \frac{a^{a+1}}{\sigma} \cdot \frac{e^{w_i}}{(a + e^{w_i})^{a+1}}}$$
 
 where:
-$$w_i = \frac{y_i - \mu_i^*}{\sigma}, \qquad \mu_i^* = \beta_0 + \beta_1 \log(S_i - \mu_\Delta)$$
+$$w_i = \frac{\ln Y_i - \mu_i^*}{\sigma}, \qquad \mu_i^* = \beta_0 + \beta_1 \log(S_i - \mu_\Delta)$$
 
 The 5 score equations at the MLE (letting $p_i = e^{w_i}/(a + e^{w_i})$, $r_i = 1 - (a+1)p_i$):
 
@@ -829,7 +829,7 @@ b0     = -9.340   b1     = -8.321
 sigma  =  0.327   a      =  0.638
 mu_d   =  0.528   log-lik = -80.11
 
-ASSE = 15.92   MAE = 0.212   (SEV+INLA: 5.76)
+ASSE = 15.92   MAE = 0.212
 ```
 
 Score checks: all 5 equations satisfied to $<10^{-9}$ — the MLE was found correctly.
@@ -842,7 +842,7 @@ Score checks: all 5 equations satisfied to $<10^{-9}$ — the MLE was found corr
 | Parameters | 5: $\beta_0, \beta_1, \sigma, \mu_d, \sigma_d$ | 5: $\beta_0, \beta_1, \sigma, a, \mu_\Delta$ |
 | log-lik | **−72.88** | −80.11 |
 | Individual $\Delta_i$ posterior | Per-observation GH integral over LogNormal | Shared via $a$ shape parameter |
-| ASSE | **5.76** | 15.92 |
+| ASSE(n=75) rank-matched | **13.02** | — (not computed) |
 
 The closed-form gain (no quadrature) comes at the cost of losing **between-individual heterogeneity** in $\Delta_i$: the stress-dependent prior centres all observations at the same $\mu_\Delta$, with the Gamma shape $a$ capturing only collective variability. SEV+INLA's $\sigma_d$ (LogNormal scale) is a genuine per-specimen variance term that SEV+INLA can integrate over — Burr XII has no equivalent.
 
@@ -858,18 +858,18 @@ The closed-form gain (no quadrature) comes at the cost of losing **between-indiv
 3. $Y_i | U_i \sim \text{SEV}(b_0 - \sigma\log U_i,\; \sigma)$ — conditional SEV
 
 Marginalizing (2)+(3) gives the Burr XII conditional density:
-$$f_\text{Burr}(y_i \mid \Delta_i) = \frac{a^{a+1}}{\sigma}\cdot\frac{e^{w_i(\Delta_i)}}{(a + e^{w_i(\Delta_i)})^{a+1}}$$
+$$f_\text{Burr}(\ln Y_i \mid \Delta_i) = \frac{a^{a+1}}{\sigma}\cdot\frac{e^{w_i(\Delta_i)}}{(a + e^{w_i(\Delta_i)})^{a+1}}$$
 
 INLA then integrates over $\Delta_i$. The model has 6 parameters: $(\beta_0, \beta_1, \sigma, a, \mu_d, \sigma_d)$.
 
-**Critical mathematical property**: as $a \to \infty$, $f_\text{Burr}(y_i | \Delta_i) \to f_\text{SEV}(y_i | \Delta_i)$, so this model **nests `rfl_sev_inla.py` exactly**.
+**Critical mathematical property**: as $a \to \infty$, $f_\text{Burr}(\ln Y_i | \Delta_i) \to f_\text{SEV}(\ln Y_i | \Delta_i)$, so this model **nests `rfl_sev_inla.py` exactly**.
 
 **Results**:
 
 ```
 b0=-9.316  b1=-8.522  sig=0.189  a=23.20  mu_d=-0.644  sig_d=0.035
 log-lik = -72.884   (SEV+INLA: -72.880)
-ASSE    =   5.74    (SEV+INLA:   5.76)
+per-obs residual =   5.74    (SEV+INLA:   5.76)
 ```
 
 **The a=23.2 finding**: in `rfl_burr2.py` (no per-obs Δ_i), the MLE drove $a=0.638$ — very heavy-tailed Gamma to compensate for the missing individual heterogeneity. Once INLA restores per-observation Δ_i posteriors, only mild overdispersion is needed ($a=23.2$). The two sources of variability are **complementary**, not additive.
@@ -881,7 +881,7 @@ ASSE    =   5.74    (SEV+INLA:   5.76)
 | SEV+INLA (`rfl_sev_inla.py`) | −72.880 | 5 | **155.76** |
 | Burr XII+INLA (`rfl_burr_inla.py`) | −72.884 | 6 | 157.77 |
 
-AIC slightly favours SEV+INLA. The 0.004-nats log-likelihood gain from the extra $a$ parameter is negligible. **`rfl_sev_inla.py` remains the recommended method** (ASSE=5.76, AIC=155.76, 5 params).
+AIC slightly favours SEV+INLA. The 0.004-nats log-likelihood gain from the extra $a$ parameter is negligible. **`rfl_sev_inla.py` remains the recommended method** (per-obs residual=5.76, AIC=155.76, 5 params).
 
 ---
 
@@ -897,7 +897,7 @@ AIC slightly favours SEV+INLA. The 0.004-nats log-likelihood gain from the extra
 
 Marginalising out $U_i$ in layers (2)+(3) gives the **Burr XII conditional likelihood**:
 
-$$f_\text{Burr}(y_i \mid \Delta_i) = \frac{a^{a+1}}{\sigma}\cdot\frac{e^{w_i(\Delta_i)}}{\bigl(a + e^{w_i(\Delta_i)}\bigr)^{a+1}}, \quad w_i(\Delta_i) = \frac{y_i - b_0 - b_1\log(S_i-\Delta_i)}{\sigma}$$
+$$f_\text{Burr}(\ln Y_i \mid \Delta_i) = \frac{a^{a+1}}{\sigma}\cdot\frac{e^{w_i(\Delta_i)}}{\bigl(a + e^{w_i(\Delta_i)}\bigr)^{a+1}}, \quad w_i(\Delta_i) = \frac{\ln Y_i - b_0 - b_1\log(S_i-\Delta_i)}{\sigma}$$
 
 The remaining integral over $\Delta_i$ is handled by a **trapezoidal grid** (400 uniform points on $\Delta \in [0.002, 0.670]$), not Gauss–Hermite.
 
@@ -905,11 +905,11 @@ The remaining integral over $\Delta_i$ is handled by a **trapezoidal grid** (400
 
 **E-step** — for each observation $i$ and GMM component $k$:
 
-$$\log L_{ik} = \log \int f_\text{Burr}(y_i \mid \delta)\, \mathcal{N}(\delta;\mu_k,\sigma_k^2)\, d\delta \quad \text{(trapezoidal)}$$
+$$\log L_{ik} = \log \int f_\text{Burr}(\ln Y_i \mid \delta)\, \mathcal{N}(\delta;\mu_k,\sigma_k^2)\, d\delta \quad \text{(trapezoidal)}$$
 
 $$r_{ik} = \frac{\pi_k\, L_{ik}}{\sum_{k'} \pi_{k'} L_{ik'}}, \quad E[\Delta_i \mid Y_i, Z_i=k] = \frac{\sum_j w_j^{(k)} \delta_j}{\sum_j w_j^{(k)}}$$
 
-where $w_j^{(k)} \propto f_\text{Burr}(y_i \mid \delta_j)\, \mathcal{N}(\delta_j;\mu_k,\sigma_k^2)$ are the per-grid-point weights.
+where $w_j^{(k)} \propto f_\text{Burr}(\ln Y_i \mid \delta_j)\, \mathcal{N}(\delta_j;\mu_k,\sigma_k^2)$ are the per-grid-point weights.
 
 **M-step GMM** — closed form given soft assignments $r_{ik}$ and posterior moments:
 
@@ -923,7 +923,7 @@ $$\ell(b_0, b_1, \sigma, a) = \sum_i \log\sum_k \pi_k L_{ik}$$
 
 Without constraints, the unconstrained MLE drives $\sigma \to 0$ (lower bound 0.05) and $a \to \infty$ (upper bound 200), giving ASSE = 0.49 — apparent **overfitting via degenerate Burr XII**:
 
-As $\sigma \to 0$ and $a \to \infty$, the Burr XII density $f_\text{Burr}(y_i \mid \delta)$ concentrates near a single point $\delta_i^* = S_i - e^{(y_i - b_0)/b_1}$ (the implied fatigue limit for each observation). The GMM prior then memorises all $\delta_i^*$ values, making $\hat{y}_i \approx y_i$. Unlike Gauss–Hermite (which has curvature bias away from the mode), the trapezoidal grid accurately captures this sharp peak — enabling the degenerate solution to be found.
+As $\sigma \to 0$ and $a \to \infty$, the Burr XII density $f_\text{Burr}(\ln Y_i \mid \delta)$ concentrates near a single point $\delta_i^* = S_i - e^{(\ln Y_i - b_0)/b_1}$ (the implied fatigue limit for each observation). The GMM prior then memorises all $\delta_i^*$ values, making $\widehat{\ln Y_i} \approx \ln Y_i$. Unlike Gauss–Hermite (which has curvature bias away from the mode), the trapezoidal grid accurately captures this sharp peak — enabling the degenerate solution to be found.
 
 This is a genuine identifiability issue: the Burr XII + GMM model without regularisation can always memorise all observations.
 
@@ -944,8 +944,8 @@ Three constrained configurations were tested to escape the degenerate solution:
 
 **AIC comparison with prior methods**:
 
-| Model | log-lik | params | AIC | ASSE |
-|-------|:-------:|:------:|:---:|-----:|
+| Model | log-lik | params | AIC | per-obs residual |
+|-------|:-------:|:------:|:---:|-----------------:|
 | SEV+INLA (`rfl_sev_inla.py`) | −72.880 | 5 | **155.76** | 5.76 |
 | Burr XII+INLA (`rfl_burr_inla.py`) | −72.884 | 6 | 157.77 | 5.74 |
 | Burr XII+EM-GMM Mode A K=1 (`rfl_burr_em.py`) | ≈−72.87 | 6 | 157.73 | **4.09** |
@@ -958,8 +958,8 @@ Three constrained configurations were tested to escape the degenerate solution:
 
 ```
 rfl-inla/
-├── rfl_inla.py              # Normal + INLA-style Multiple Laplace (ASSE=8.63)
-├── rfl_sev_inla.py          # SEV + INLA: SEV conditional + 9-pt GH (ASSE=5.76) ⭐
+├── rfl_inla.py              # Normal + INLA-style Multiple Laplace (per-obs residual=8.63)
+├── rfl_sev_inla.py          # SEV + INLA: SEV conditional + 9-pt GH (per-obs residual=5.76) ⭐
 ├── rfl_profile.py           # Semi-parametric EM + Profile SE (Normal + NPMLE)
 ├── rfl_sev.py               # SEV + NPMLE: Weibull conditional, BFGS M-step, Profile SE
 ├── rfl_sev_ksel.py          # K=1..4 selection: Normal+NPMLE vs SEV+NPMLE
@@ -968,9 +968,9 @@ rfl-inla/
 ├── rfl_residuals_run.py     # Compute absolute residuals from fitted model
 ├── ssla_se.py               # SSLA-based SE: Direction A (ASSLA-EM) + B (SSLA-INLA)
 ├── rfl_burr.py              # Burr XII MLE v1 (4-param, degenerate b->0)
-├── rfl_burr2.py             # Burr XII MLE v2 (5-param, stress-dependent prior, ASSE=15.92)
-├── rfl_burr_inla.py         # Burr XII + INLA (6-param, 3-level hierarchy, ASSE=5.74)
-├── rfl_burr_em.py           # Burr XII + EM-GMM prior (K-comp. Gaussian mix., ASSE=4.09) ⭐
+├── rfl_burr2.py             # Burr XII MLE v2 (5-param, stress-dependent prior, per-obs residual=15.92)
+├── rfl_burr_inla.py         # Burr XII + INLA (6-param, 3-level hierarchy, per-obs residual=5.74)
+├── rfl_burr_em.py           # Burr XII + EM-GMM prior (K-comp. Gaussian mix., per-obs residual=4.09) ⭐
 ├── rfl_compare_all.py       # All 6 models: ASSE(n=75) + ASSE_te (holdout) + ASSE(n=75) (P&M Table 3)
 ├── rfl_asse_zscore.py       # Z-score ASSE: rank→LogNormal quantile→predicted lnY (no fitting)
 ├── rfl_loo.py               # Direction A: influence-function LOO, Prior-LOO ASSE ≈ 40 all methods
@@ -1005,10 +1005,10 @@ python rfl_sev_ksel.py
 # 4. SEV + MCEM (continuous LogNormal g, rejection sampling, ASSE ≈ Chiu thesis)
 python rfl_mcem.py
 
-# 5. Normal + INLA-style Multiple Laplace (ASSE=8.63)
+# 5. Normal + INLA-style Multiple Laplace (per-obs residual=8.63)
 python rfl_inla.py
 
-# 6. SEV + INLA: best result, ASSE=5.76
+# 6. SEV + INLA: best in-sample result, per-obs residual=5.76
 python rfl_sev_inla.py
 
 # 7. Residual analysis
@@ -1023,10 +1023,10 @@ python rfl_burr.py
 # 10. Burr XII closed-form MLE v2 (stress-dependent prior, 5-param, ASSE=15.92)
 python rfl_burr2.py
 
-# 11. Burr XII + INLA: 3-level hierarchy, nested in SEV+INLA (a->inf), ASSE=5.74
+# 11. Burr XII + INLA: 3-level hierarchy, nested in SEV+INLA (a->inf), per-obs residual=5.74
 python rfl_burr_inla.py
 
-# 12. Burr XII + EM-GMM: K-component Gaussian mix. prior, best ASSE=4.09 (Mode A, K=1)
+# 12. Burr XII + EM-GMM: K-component Gaussian mix. prior, best per-obs residual=4.09 (Mode A, K=1)
 python rfl_burr_em.py
 
 # Structural Extensions (2026-05-27)
@@ -1107,8 +1107,8 @@ The 9-pt GH evaluates the integrand at optimal quadrature nodes centred at the p
 | **SEV + NPMLE** (`rfl_sev.py`) | Physical motivation (weakest-link); better AIC/BIC than Normal+NPMLE | Same ASSE limitation as Normal+NPMLE |
 | **SEV + MCEM** (`rfl_mcem.py`) | Continuous $g(\Delta)$; good warm-start for INLA; flexible | MC noise; slow convergence; needs M≥200, iter≥70 |
 | **Normal + INLA** (`rfl_inla.py`) | Accurate GH integration; fast NM/SA convergence | Symmetric Normal misspecifies left-skewed log-life; ASSE 8.63 |
-| **SEV + INLA** (`rfl_sev_inla.py`) | Best ASSE (5.76) among GH methods; physically correct conditional; deterministic | Degenerates at 37.3% censoring ($\hat\beta_1\to-20$, same as Normal+INLA); SE not yet Profile-calibrated |
-| **Burr XII + EM-GMM** (`rfl_burr_em.py`) | Best ASSE (4.09); **robust under heavy censoring** ([C] ASSE=4.43 vs SEV+INLA 17.97); no Laplace curvature bias | Degenerate MLE without $\sigma,a$ constraints; heuristic bounds; AIC still favours SEV+INLA |
+| **SEV + INLA** (`rfl_sev_inla.py`) | Best per-obs residual (5.76) among GH methods; physically correct conditional; deterministic | Degenerates at 37.3% censoring ($\hat\beta_1\to-20$, same as Normal+INLA); SE not yet Profile-calibrated |
+| **Burr XII + EM-GMM** (`rfl_burr_em.py`) | Best per-obs residual (4.09); **robust under heavy censoring** ([C] per-obs residual=4.43 vs SEV+INLA 17.97); no Laplace curvature bias | Degenerate MLE without $\sigma,a$ constraints; heuristic bounds; AIC still favours SEV+INLA |
 
 ---
 
@@ -1178,7 +1178,7 @@ $$\text{ASSE}_\text{Bayes} = \mathbb{E}_{\theta \sim p(\theta|y)}\!\left[\sum_i\
 **File:** `rfl_sev_inla_mix.py`  
 **Motivation:** The unimodal LogNormal $g(\Delta)$ may be misspecified (NPMLE suggests K=2–3 support points for Normal, K=3 for SEV). A K-component LogNormal mixture bridges the discrete NPMLE structure with the continuous posterior flexibility of INLA.
 
-**Model:** $$g(\Delta) = \sum_{k=1}^K \pi_k \operatorname{LogNormal}(\mu_k, \sigma_k^2)$$, SEV conditional, 9-pt GH per component.
+**Model:** $$g(\Delta) = \sum_{k=1}^K \pi_k \text{LogNormal}(\mu_k, \sigma_k^2)$$, SEV conditional, 9-pt GH per component.
 
 **Results** (consistent fast-GH comparison across K):
 
