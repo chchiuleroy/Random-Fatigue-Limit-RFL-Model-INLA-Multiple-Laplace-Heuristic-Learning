@@ -20,7 +20,7 @@ Six complementary estimation strategies are provided, extending work first prese
 | **Burr XII + INLA (6-param)** | **`rfl_burr_inla.py`** | **SEV** | **Burr XII inner + 9-pt GH outer** | **BFGS → NM** | **12.78** |
 | **Burr XII + EM-GMM (Mode A, K=1)** ⭐ | **`rfl_burr_em.py`** | **SEV** | **Burr XII inner + trapezoidal grid** | **EM + L-BFGS-B** | 12.84 |
 
-> † **ASSE(n=75)** = $\sum_{j=1}^{J}\sum_{i=1}^{n_j}|\ln y_{ij} - \ln\hat y_{ij}|$ where $\hat y_{ij} = F_W^{-1}\!\left(\frac{i-0.5}{n_j}\,s_j,\hat\theta\right)$ is the rank-matched quantile of the **marginal CDF** (integrating over $\Delta$). Definition from Chiu (2005) and Pascual & Meeker (1999) Response, p. 299. All values use $Y = \ln N$. "—" = not yet computed. Computed by `rfl_compare_all.py`.
+> † **ASSE(n=75)** = $\sum_{j=1}^{J}\sum_{i=1}^{n_j}|\ln y_{ij} - \ln\hat y_{ij}|$ where $\hat y_{ij} = F_W^{-1}\\left(\frac{i-0.5}{n_j}\,s_j,\hat\theta\right)$ is the rank-matched quantile of the **marginal CDF** (integrating over $\Delta$). Definition from Chiu (2005) and Pascual & Meeker (1999) Response, p. 299. All values use $Y = \ln N$. "—" = not yet computed. Computed by `rfl_compare_all.py`.
 >
 > \* SEV+MCEM ASSE(n=75) = 15.75 computed from hardcoded warm-start parameters via `rfl_asse_zscore.py`; fully converged MCEM MLE may differ.
 >
