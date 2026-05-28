@@ -36,13 +36,13 @@ $\Delta$ varies across specimens and is **never directly observed**.
 
 The RFL model ([Pascual & Meeker 1999](https://doi.org/10.1080/00401706.1999.10485928)) treats $\Delta$ as a random variable:
 
-$$\ln Y_i = \beta_0 + \beta_1 \ln(S_i - \Delta) + \varepsilon_i, \qquad \varepsilon_i \sim \mathcal{N}(0,\, \sigma^2), \quad \Delta \perp\!\!\!\perp \varepsilon_i \mid S_i$$
+$$\ln Y_i = \beta_0 + \beta_1 \ln(S_i - \Delta) + \varepsilon_i, \qquad \varepsilon_i \sim \mathcal{N}(0,\, \sigma^2), \quad \Delta \perp\\perp \varepsilon_i 
 
 where $Y_i$ is the lifetime (cycles to failure).
 
 The marginal likelihood requires integrating out $\Delta$:
 
-$$L_i(\theta) = \int_0^{S_i} f(y_i \mid \Delta, S_i)\; g(\Delta;\, \mu_\Delta, \sigma_\Delta)\; d\Delta$$
+$$L_i(\theta) = \int_0^{S_i} f(y_i \mid \Delta, S_i)\ g(\Delta;\, \mu_\Delta, \sigma_\Delta)\ d\Delta$$
 
 ---
 
@@ -52,7 +52,7 @@ $$L_i(\theta) = \int_0^{S_i} f(y_i \mid \Delta, S_i)\; g(\Delta;\, \mu_\Delta, \
 
 Replaces the parametric $g(\Delta)$ with a **nonparametric MLE (NPMLE)**:
 
-$$\hat{G} = \sum_{k=1}^{K} \hat\pi_k\, \delta_{\hat\Delta_k}$$
+$$\hat{G} = \sum_{k=1}^{K} \hat\pi_k\ \delta_{\hat\Delta_k}$$
 
 By Lindsay (1983), the NPMLE of a mixture distribution is always a discrete distribution with at most $n$ support points. This collapses the integral into a finite sum — **no Laplace approximation needed**.
 
@@ -75,7 +75,7 @@ Estimated mixing distribution: $\hat{G} = 0.930\,\delta_{0.532} + 0.070\,\delta_
 
 Replaces the Normal error with **Smallest Extreme Value (SEV)** — while keeping the NPMLE discrete mixing distribution:
 
-$$\ln Y_i = \beta_0 + \beta_1 \ln(S_i - \Delta) + \varepsilon_i, \qquad \varepsilon_i \sim \mathrm{SEV}(0,\, \sigma)$$
+$$\ln Y_i = \beta_0 + \beta_1 \ln(S_i - \Delta) + \varepsilon_i, \qquad \varepsilon_i \sim \mathrm{SEV}(0\, \sigma)$$
 
 Since SEV is a location-scale family, this implies $\ln Y_i \mid \Delta \sim \mathrm{SEV}(\mu,\sigma)$ with $\mu = \beta_0 + \beta_1\ln(S_i-\Delta)$.
 
@@ -167,7 +167,7 @@ $$\hat\Delta_i = \arg\max_\Delta \bigl[\log f(y_i \mid \Delta) + \log g(\Delta)\
 
 3. **Multiple Laplace** (9-node Gauss–Hermite centred at mode):
 
-$$L_i \;\approx\; \tilde\sigma_i \sum_{j=1}^{9} w_j^{\mathrm{GH}}\, e^{x_j^2/2}\, h_i(\hat\Delta_i + \tilde\sigma_i\, x_j)$$
+$$L_i \\approx\\tilde\sigma_i \sum_{j=1}^{9} w_j^{\mathrm{GH}}\ e^{x_j^2/2}\ h_i(\hat\Delta_i + \tilde\sigma_i\, x_j)$$
 
 The $e^{x_j^2/2}$ factor cancels the Gaussian kernel of the Laplace proposal (importance-weighted GH).  
 Single Laplace = zeroth-order limit of this ($j=1$, just the mode contribution).
@@ -366,12 +366,12 @@ Specimens are right-censored at a pre-set time $T_j$ per stress level:
 
 $$\delta_i = \mathbf{1}[Y_i > T_j], \quad \tilde Y_i = \min(Y_i, T_j)$$
 
-The censored likelihood contribution replaces $f(y_i \mid \Delta)$ with $P(Y_i > T_j \mid \Delta) = \bar\Phi\!\bigl(\tfrac{T_j - \mu(S_i,\Delta)}{\sigma}\bigr)$.
+The censored likelihood contribution replaces $f(y_i \mid \Delta)$ with $P(Y_i > T_j \mid \Delta) = \bar\Phi\\bigl(\tfrac{T_j - \mu(S_i,\Delta)}{\sigma}\bigr)$.
 
 ### Hybrid Type I-II (per stress level)
 Stop at the earlier of the $r$-th failure or fixed time $T$:
 
-$$T^*_j = \min\!\bigl(X_{r_j{:}n_j},\; T\bigr)$$
+$$T^*_j = \min\\bigl(X_{r_j{:}n_j},\ T\bigr)$$
 
 All specimens surviving past $T^*_j$ are right-censored at $T^*_j$.  
 This generalises Type I (set $r_j = n_j$) and Type II (set $T = \infty$).
