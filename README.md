@@ -500,12 +500,15 @@ Parameters are estimated via the Fuller (1987) error-in-measurement approach.
 
 **Thesis parameter estimates on real data:**
 
-| Parameter | Estimate |
-|-----------|----------|
-| $\hat X_0$ (fatigue limit location) | 0.0345517 |
-| $(\hat\beta_0, \hat\beta_1)$ | (−9.0747, −7.6027) |
-| $\widehat{\text{Var}}(\hat{q}_t - q_t \mid Y, Q)$ | 0.007895 |
-| $\hat\sigma_\varepsilon^2$ | 0.031211 |
+| Parameter | Estimate | 備注 |
+|-----------|----------|------|
+| $\hat X_0$ (fatigue limit location) | **0.5505992** | stress 尺度下的疲勞極限位置參數 |
+| $\hat\sigma_u^2$ (measurement error variance) | 0.00833609169 | Fuller error-in-variables 量測誤差 |
+| $\hat\mu_\Delta$ (LogNormal log-scale mean) | −0.5952965 | $\Delta \sim \text{logN}(\mu_\Delta, \sigma_\Delta^2)$ |
+| $\hat\sigma_\Delta^2$ (LogNormal log-scale variance) | 0.0345517 → $\hat\sigma_\Delta = 0.1859$ | **Roy SEV+INLA 的 $\hat\sigma_d = 0.036$，差距 5×** |
+| $(\hat\beta_0, \hat\beta_1)$ | (−9.074687, −7.602654) | |
+| $\widehat{\text{Var}}(\tilde{q}_t - q_t \mid \omega, Q)$ | 0.007895028 | 預測誤差方差 |
+| $\hat\sigma_\varepsilon^2$ | 0.031211 → $\hat\sigma_\varepsilon = 0.1767$ | Roy SEV+INLA $\hat\sigma = 0.190$，相近 |
 
 ### Table 3 — E Criterion Comparison Across Models (Chiu 2005, Table 3)
 
