@@ -2,15 +2,11 @@
 
 > **Repository:** Python implementation · **Dataset:** Pascual & Meeker (1999), $n=75$, 5 stress levels · **Language:** Python 3, NumPy/SciPy
 
----
-
 ## Abstract
 
 This repository implements a comprehensive suite of estimation and prediction strategies for the **Random Fatigue-Limit (RFL) model** of Pascual & Meeker (1999). A **heuristic learning** pipeline — random grid search followed by Dual Annealing (Tsallis statistics) and Nelder–Mead polishing — serves as the cross-cutting optimisation strategy for all non-convex objectives: both the 5-dimensional log-likelihood (INLA-class methods) and the rank-ASSE prediction criterion directly (Method B). Nine estimation strategies are implemented, spanning semi-parametric NPMLE, INLA Multiple Laplace approximation, MCEM, and Burr XII closed-form marginals.
 
 Two prediction quality metrics are systematically compared: the **rank-ASSE** (rank-matched marginal quantile error per P&M 1999) and the **z-ASSE** (within-group z-score prediction per Chiu 2005). Direct z-ASSE optimisation via LAD regression achieves z-ASSE = **9.94**, an 8% improvement over the thesis benchmark of 10.80 — identified by recognising that Chiu's OLS fit minimises SSE while the metric itself is SAE. A Kaplan–Meier z-score framework extends all methods to Type I, Type II, hybrid, and progressive right-censoring. Three structural extensions are provided: PSIS-LOO cross-validation, Bayesian $\theta$ integration via Laplace approximation, and a K-component LogNormal mixture for $g(\Delta)$.
-
----
 
 ## Summary of Estimation Strategies
 
@@ -43,8 +39,6 @@ Two prediction quality metrics are systematically compared: the **rank-ASSE** (r
 >
 > ‡ `rfl_burr.py` (4-param) degenerate: MLE drives $b \to 0$.
 
----
-
 ## 1. Background
 
 In fatigue testing, a metal specimen subjected to cyclic stress $S$ fails after $N$ cycles.
@@ -60,8 +54,6 @@ where $Y_i$ is the lifetime (cycles to failure).
 The marginal likelihood requires integrating out $\Delta$:
 
 $$L_i(\theta) = \int_0^{S_i} f(\ln Y_i \mid \Delta)\ g(\Delta;\ \mu_\Delta, \sigma_\Delta)\ d\Delta$$
-
----
 
 ## 2. Estimation Strategies
 
@@ -85,8 +77,6 @@ By Lindsay (1983), the NPMLE of a mixture distribution is always a discrete dist
 > Profile likelihood SE gives correct coverage (~96% vs ~30% in simulation).
 
 Estimated mixing distribution: $\hat{G} = 0.930\,\delta_{0.532} + 0.070\,\delta_{0.569}$
-
----
 
 ### 2.2 SEV + NPMLE (`rfl_sev.py`)
 
@@ -166,8 +156,6 @@ INLA still dominates both (×3–4 better) because it uses a continuous posterio
 SEV wins 4 of 5 stress levels over Normal (loses only at $S=0.950$, the lowest excess-stress group).  
 The largest gain is at $S=0.825$: SEV MAE = 0.251 vs Normal 0.495 — the Weibull tail structure fits the intermediate stress group substantially better.
 
----
-
 ### 2.3 INLA-style Multiple Laplace (`rfl_inla.py`)
 
 Keeps $g(\Delta) = \text{LogNormal}(\mu_\Delta, \sigma_\Delta^2)$ (parametric) and approximates the integral using the **INLA two-level philosophy**:
@@ -211,8 +199,6 @@ regions of the likelihood surface are worth exploring.
 | Latent Gaussian field $\mathbf{x}$ | Per-specimen fatigue limit $\{\Delta_i\}$ |
 | Inner Laplace approximation | 9-pt GH centred at $\hat\Delta_i$ per observation |
 | Outer integration over hyperparameters $\boldsymbol\theta$ | SA-based MLE search |
-
----
 
 ## 3. Heuristic Learning Framework
 
@@ -261,8 +247,6 @@ Both the log-likelihood and the rank-ASSE share this same 5D non-convex landscap
 | **ASSE outer opt** | **Random grid → Dual Annealing → Nelder-Mead** | **`run_rank_asse_opt()` in `rfl_chiu.py`** | **Non-convex 5D rank-ASSE (same landscape, different objective)** |
 | EM initialisation | Multi-start random seeds | `rfl_profile.py`, `rfl_em.py` | Escape EM local optima |
 | Model selection | BIC over $K \in \{1,2,3,4\}$ | `rfl_em.py` | Automatic mixture complexity |
-
----
 
 ### 3.1 `heuristic_optimize()` — 3-Stage Outer Search (Log-Likelihood)
 
@@ -327,8 +311,6 @@ res_nm = minimize(
 | Dual Annealing | Global escape + local refinement | Nelder-Mead alone gets trapped; grid alone too coarse |
 | Nelder-Mead | Sub-grid convergence | SA final step is discrete; leaves $O(10^{-4})$ residual error |
 
----
-
 ### 3.2 Adaptive Laplace Scale — Self-Calibrating Inner Quadrature
 
 Inside `_multi_laplace()`, the Gauss–Hermite nodes are **not fixed** — they adapt to the curvature of each observation's posterior:
@@ -348,8 +330,6 @@ d_pts = d_hat + sig_t * _GHX   # _GHX: physicists' GH abscissae
 ```
 
 For a flat posterior (large $\tilde\sigma_i$), nodes spread widely; for a sharp posterior, they cluster tightly. This means the quadrature self-calibrates per observation — a key heuristic that avoids the systematic bias of fixed-node integration in the tails.
-
----
 
 ### 3.3 Multi-Start EM — Escaping Local Optima
 
@@ -371,8 +351,6 @@ for seed in range(15):
 
 This is a classical **random restart heuristic**: inexpensive given the fast E- and M-step implementations, and practically guarantees convergence to the global NPMLE for $K \le 4$.
 
----
-
 ### 3.4 BIC-Driven Automatic Model Selection
 
 `rfl_em.py` automatically selects the number of NPMLE support points $K$ via BIC:
@@ -390,8 +368,6 @@ for K in [1, 2, 3, 4]:
 ```
 
 The heuristic aspect: BIC penalises model complexity adaptively — heavier penalty for larger $n$, so the selected $K$ automatically scales with the available information rather than requiring manual tuning.
-
----
 
 ### 3.5 Flow Summary
 
@@ -416,8 +392,6 @@ The heuristic aspect: BIC penalises model complexity adaptively — heavier pena
 
 > The 3-stage pipeline is **objective-agnostic**: it applies to the log-likelihood (INLA methods) and the rank-ASSE directly (Method B) because both share the same non-convex 5D structure induced by $\log(S-\Delta)$. Methods C-1/C-2 (z-ASSE) use only Nelder-Mead because their effective outer space is 2D with the inner $(\beta_0,\beta_1)$ solved analytically/by LP.
 
----
-
 ## 4. Censoring Framework
 
 ### Type I (fixed cutoff)
@@ -434,8 +408,6 @@ $$T^*_j = \min\\bigl(X_{r_j{:}n_j},\ T\bigr)$$
 
 All specimens surviving past $T^*_j$ are right-censored at $T^*_j$.  
 This generalises Type I (set $r_j = n_j$) and Type II (set $T = \infty$).
-
----
 
 ## 5. Empirical Results
 
@@ -504,9 +476,9 @@ Run `python rfl_residuals_run.py` for the full per-observation table.
 ### 5.4 Cross-Method Censoring Comparison
 
 All three continuous-prior methods evaluated under the same [A]/[B]/[C] scenarios.  
-ASSE‡ (per-obs posterior mean, double-dipping) is computed on **uncensored observations only**; $n_\text{obs}$ varies by scenario.
+**Fitted MAE** $= \sum_i \lvert E[\mu(S_i,\Delta_i)\mid y_i,\hat\theta] - y_i \rvert$, evaluated on **uncensored observations only** ($n_\text{obs}$ varies by scenario). This is an **in-sample** metric: the posterior mean $E[\Delta_i \mid y_i]$ conditions on the same $y_i$ used for fitting (double-dipping). It is **not** rank-ASSE (rank-matched marginal quantile error) nor z-ASSE (within-group z-score SAE); values cannot be directly compared across those two metrics.
 
-| Method | Scenario | $n_\text{obs}$ | ASSE‡ | $\hat\beta_1$ | $\hat\sigma$ | $\hat{a}$ / $\hat\sigma_d$ | Status |
+| Method | Scenario | $n_\text{obs}$ | Fitted MAE | $\hat\beta_1$ | $\hat\sigma$ | $\hat{a}$ / $\hat\sigma_d$ | Status |
 |--------|----------|:--------------:|------:|------:|------:|------:|--------|
 | Normal+INLA | [A] 0% | 75 | 8.63 | −8.348 | 0.295 | $\hat\sigma_d=0.033$ | ✅ stable |
 | Normal+INLA | [B] 20% | — | n/a | −8.948 | 0.358 | — | ✅ param OK |
@@ -542,8 +514,6 @@ The GH approach requires finding $\hat\Delta_i = \arg\max_\Delta [\log f(\ln Y_i
 
 The two approximations agree to within 0.02 on 75 observations — the Laplace scale $\tilde\sigma_i \approx 0.006$–$0.011$ is so small that higher-order GH corrections are negligible for this dataset. The dominant benefit of Multiple Laplace appears in heavy-tailed or more diffuse $g(\Delta)$ settings.
 
----
-
 ## 6. Comparison with Prior Work
 
 The fatigue dataset originates from Castillo & Hadi (1995) / Pascual & Meeker (1999):  
@@ -569,88 +539,29 @@ Parameters are estimated via the Fuller (1987) error-in-measurement approach.
 | $\widehat{\text{Var}}(\tilde{q}_t - q_t \mid \omega, Q)$ | 0.007895028 | 預測誤差方差 |
 | $\hat\sigma_\varepsilon^2$ | 0.031211 → $\hat\sigma_\varepsilon = 0.1767$ | Roy SEV+INLA $\hat\sigma = 0.190$，相近 |
 
-### Table 3 — E Criterion Comparison Across Models (Chiu 2005, Table 3)
+### Metric Definitions
 
-**E** = $\sum_{j=1}^{J}\sum_{i=1}^{n_j}|\ln y_{ij} - \ln\hat y_{ij}|$ where $\hat y_{ij} = F_W^{-1}((i{-}0.5)/n_j;\,s_j,\hat\theta)$ is the rank-matched marginal quantile (P&M Response, 1999, p. 299). All values use $Y = \ln N$ (natural log). Lower is better.
+Two metrics are used throughout this project. **They measure different aspects of fit and are not comparable across rows.**
 
-| Model | No. of Parameters | E (rank-matched) |
-|-------|:-----------------:|-----------------:|
-| Little & Ekvall (1981), model 1 | 3 | 41.13 |
-| Little & Ekvall (1981), model 2 | 3 | 31.17 |
-| **Normal + NPMLE (rfl_profile.py)** | **6** | **16.85** |
-| **SEV + NPMLE (rfl_sev.py)** | **6** | **16.49** |
-| Spindel & Haibach (1981) | 6 | 17.35 |
-| Bastenaire (1972) | 5 | 20.52 |
-| Castillo et al. (1985) | 4 | 20.27 |
-| Castillo & Hadi (1995) | 5 | 18.12 |
-| Pascual & Meeker (1999), Nor–Nor | 5 | 12.84 |
-| **Chiu (2005), Nor–Nor (thesis)** | **5** | **10.80** |
-| **SEV + MCEM (rfl_mcem.py)** | **5** | **15.75**‡ |
-| **Normal + INLA (rfl_inla.py)** | **5** | **12.85** |
-| **SEV + INLA (rfl_sev_inla.py)** | **5** | **13.02** |
-| **Burr XII + INLA (rfl_burr_inla.py)** | **6** | **12.78** |
-| **Burr XII + EM-GMM (rfl_burr_em.py)** | **6** | **12.84** |
+| Metric | Formula | Source | Measures |
+|--------|---------|--------|---------|
+| **rank-ASSE** | $\sum_{j,i}\|\ln y_{(i)j} - F_W^{-1}(\tfrac{i-0.5}{n_j};\,s_j,\hat\theta)\|$ | P&M (1999) p. 299 | Marginal CDF calibration |
+| **z-ASSE** | $\sum_t\|\omega_t - \hat\omega_t\|$ via within-group z-score → prior quantile | Chiu (2005) thesis | Within-group ordering accuracy |
+| **Fitted MAE** | $\sum_i|E[\mu(S_i,\Delta_i)\mid y_i,\hat\theta]-y_i|$ | This work (§5.4) | In-sample posterior reconstruction only |
 
-> ‡ SEV+MCEM ASSE(n=75) = 15.75 computed from hardcoded MCEM warm-start parameters (see `rfl_asse_zscore.py`); fully converged MCEM MLE may differ.
->
-> **Key conclusion:** On the rank-matched ASSE criterion, the thesis error-in-variables model (ASSE=10.80) outperforms all our RFL models (best: Burr+INLA ASSE=12.78). The thesis uses the Fuller (1987) error-in-variables framework for prediction, which is a different modelling approach from the Bayesian marginal-integration used here. On the correct ASSE criterion, our Normal+INLA (12.85) matches P&M's own result (12.84 ✓), validating the implementation.
->
-> **Why NPMLE methods rank poorly on E:** The discrete K=2 NPMLE prior cannot correctly represent the shape of the marginal CDF $F_W(\cdot;\,s_j)$ between stress levels, causing the rank-matched quantiles to be systematically off. INLA with a continuous LogNormal prior matches the marginal distribution shape much better.
->
-> **The two metrics measure different things:**
-> - **ASSE(n=75) (rank-matched):** does the marginal CDF $F_W(y;\,s_j,\hat\theta)$ correctly describe the empirical distribution within each stress group? This is a genuine predictive calibration check, comparable across models.
-> - **ASSE (per-obs, double-dipping):** how well can we "predict" $Y_i$ after seeing $y_i$? Useful for comparing posterior concentration across methods, not for cross-model fairness.
+> rank-ASSE requires CDF inversion (brentq) per observation. z-ASSE bypasses inversion via z-scores — faster but measures different fit. Fitted MAE is in-sample only (double-dipping) and is **not** a predictive metric.
 
-### P&M Response (1999) E Criterion — Rank-Matched Prediction Error
+**Complete numerical results are consolidated in §10.1 Conclusions.**
 
-Pascual & Meeker (1999, *Technometrics* Response, p. 299, Table 3) define a **rank-matched absolute prediction error** that avoids the double-dipping and within-group indistinguishability problems of marginal-mean ASSE:
+### rank-ASSE Formula — P&M Response (1999)
 
-$$E = \sum_{j=1}^{J}\sum_{i=1}^{n_j} \bigl|\log y_{ij} - \log \hat{y}_{ij}\bigr|, \qquad \hat{y}_{ij} = F_W^{-1}\!\!\left(\frac{i - 0.5}{n_j};\; s_j,\; \hat\theta\right)$$
+$$\text{rank-ASSE} = \sum_{j=1}^{J}\sum_{i=1}^{n_j} \bigl|\ln y_{(i)j} - \ln \hat{y}_{ij}\bigr|, \qquad \hat{y}_{ij} = F_W^{-1}\!\!\left(\frac{i - 0.5}{n_j};\; s_j,\; \hat\theta\right)$$
 
-- **$y_{ij}$**: the $i$-th order statistic (sorted ascending) within stress group $j$
-- **$\hat{y}_{ij}$**: the corresponding theoretical quantile from the **marginal CDF** $F_W^{-1}$ (integrating over $\Delta$), evaluated at rank $p_i = (i - 0.5)/n_j$
-- **Inversion**: done numerically via `scipy.optimize.brentq` for each $(i, j)$ pair
+- **$y_{(i)j}$**: the $i$-th order statistic (sorted ascending) within stress group $j$
+- **$\hat{y}_{ij}$**: the corresponding theoretical quantile from the **marginal CDF** $F_W^{-1}$ (integrating over $\Delta$), evaluated at Hazen rank $p_i = (i - 0.5)/n_j$
+- **Inversion**: done numerically via `scipy.optimize.brentq` per $(i,j)$ pair; vectorised via `np.interp` on 400-pt grid in `rfl_chiu.py`
 
-#### Why E is the correct metric (and LOO ASSE ≈ 40 is not)
-
-The marginal mean $E[\hat{Y} \mid S=s_j, \hat\theta]$ is identical for all observations at the same stress level — it cannot distinguish within-group variability at all. This is why the Prior-LOO ASSE (Direction A) is ≈40 for every method: predicting the marginal mean for a new observation at stress $s_j$ is optimal given no conditioning on $y_i$.
-
-The E criterion, by contrast, compares the **empirical distribution** of observed log-lives in group $j$ against the **theoretical marginal distribution** — asking whether the model's marginal CDF $F_W(\cdot; s_j)$ correctly captures the shape (quantiles) of each stress group's distribution. This is a proper probabilistic calibration check.
-
-#### P&M Table 3 benchmark (concrete data, from Response p. 299)
-
-| Model | Conditional $f(y|\Delta)$ | E |
-|-------|:------------------------:|---:|
-| Normal–Normal RFL | Normal | **12.84** |
-| SEV–Normal RFL | SEV | 12.96 |
-| Castillo & Hadi (1995) | — | 18.12 |
-| Little & Ekvall model 1 | — | 41.13 |
-| Little & Ekvall model 2 | — | 31.17 |
-
-These are P&M's own results on the concrete fatigue data (the same dataset used here).
-
-#### Our results — ASSE(n=75) for all 6 Roy models (n=75 fit, P&M formula)
-
-| Model | Conditional | $g(\Delta)$ | ASSE(n=75) | Z-Score ASSE* |
-|-------|:-----------:|:-----------:|------:|------:|
-| Normal+NPMLE | Normal | Discrete K=2 | 16.853 | — |
-| SEV+NPMLE | SEV | Discrete K=2–3 | 16.488 | — |
-| **Normal+INLA** | **Normal** | **LogNormal** | **12.850** ← matches P&M 12.84 ✓ | 12.749 |
-| SEV+INLA | SEV | LogNormal | 13.022 | **11.496** |
-| **Burr XII+INLA** | **Burr XII** | **LogNormal** | **12.776** ← best rank-based | 11.924† |
-| Burr+EM-GMM (Mode A) | Burr XII | GMM K=1 | 12.843 | 12.762‡ |
-| **Chiu (2005) thesis** | Normal | error-in-variables | **10.80** | — |
-
-> \* Z-Score ASSE uses within-group z-scores mapped to the prior quantile: $\hat\delta_{ij} = \exp(\mu_d + \sigma_d z_{ij})$ for LogNormal priors, $\hat\delta_{ij} = \mu_1 + \sigma_1 z_{ij}$ for Normal GMM prior. "—" = method not applicable or not computed.  
-> † Burr+INLA z-score uses approximate hardcoded parameters; true value with fully optimised params may differ slightly.  
-> ‡ Burr+EM-GMM z-score uses Normal GMM prior quantile $\hat\delta_{ij}=\mu_1+\sigma_1 z_{ij}$ ($\mu_1=0.526$, $\sigma_1=0.0185$) with SEV Euler shift. Note: $\mathcal{N}(\mu_1,\sigma_1^2)$ does not respect the physical constraint $\Delta\in(0,S_j)$; the EM code implicitly truncates via the discrete grid $[0.002,\,0.670]$. The z-score result is an approximation — a truncated-Normal or LogNormal prior would be theoretically more appropriate.
-
-**Key findings:**
-- **Normal+INLA E=12.850** matches P&M's own Normal-Normal benchmark (E=12.84) to within 0.01, validating the implementation.
-- **SEV+INLA z-score ASSE=11.496** is the best result among all models, approaching the thesis benchmark of 10.80.
-- All INLA-class and EM-GMM models cluster near E≈12.8–13.0 (rank-based), far better than NPMLE (E≈16.5–16.9). Z-score consistently improves rank-based for all models with continuous priors.
-- **ASSE(n=75) ≈ 41 for all 6 models** — when using marginal mean (no conditioning on $y_i$), no method beats the stress-level mean. This is the LOO ASSE ≈ 40 finding in the E metric form.
-- SEV+INLA (rank-based E=13.022) is slightly worse than Normal+INLA (E=12.850) by E criterion, but reverses with z-score method (11.496 vs 12.749).
+> Why rank-ASSE beats Fitted MAE as a benchmark: the marginal mean $E[\hat Y \mid S=s_j, \hat\theta]$ is identical for all observations at the same stress level and cannot distinguish within-group variability. rank-ASSE instead compares the **empirical quantile distribution** against the **theoretical marginal CDF** — a proper probabilistic calibration check that avoids the double-dipping artefact.
 
 #### Marginal CDF implementation for each model
 
@@ -684,22 +595,18 @@ This avoids marginal CDF inversion entirely and exploits the LogNormal prior str
 
 **Results** (hardcoded MLE parameters; run `python rfl_asse_zscore.py`):
 
-| Model | Rank-based ASSE(n=75) | Z-Score ASSE | Improvement |
-|-------|:---------------------:|:------------:|:-----------:|
-| Normal+INLA | 12.872 | 12.749 | −0.123 |
-| SEV+INLA | 13.094 | **11.496** | **−1.598** |
-| SEV+MCEM | 15.747 | 14.422 | −1.325 |
-| Burr+INLA† | 13.925 | 11.924 | −2.000 |
-| Chiu (2005) thesis | — | **10.80** | — |
+| Model | rank-ASSE | z-ASSE | Improvement |
+|-------|----------:|-------:|:-----------:|
+| Normal+INLA | 12.872 | 12.749 | −0.12 |
+| SEV+INLA | 13.094 | **11.496** | **−1.60** |
+| SEV+MCEM | 15.747 | 14.422 | −1.33 |
+| Burr+INLA† | 13.925 | 11.924 | −2.00 |
 
-> † Burr+INLA uses approximate hardcoded parameters; true rank-based ASSE with fully optimised params ≈12.78.  
-> Small discrepancies vs `rfl_compare_all.py` rank-based values (e.g. Normal+INLA: 12.872 vs 12.850) reflect parameter rounding in hardcoded values.
+> † Burr+INLA uses approximate hardcoded parameters; fully optimised rank-ASSE ≈ 12.78 (see Comprehensive Scoreboard above).  
+> Small discrepancies vs `rfl_compare_all.py` (e.g. Normal+INLA: 12.872 vs 12.850) reflect parameter rounding.
 
-**Key finding:** The z-score approach consistently improves ASSE for all models. SEV+INLA drops from 13.09 → 11.50 (−12%), approaching the thesis benchmark of 10.80. The improvement is largest for SEV-based models where the asymmetric error distribution creates systematic offset between rank-matched marginal quantiles and actual within-group z-score positions. All z-score ASSE values remain above the thesis 10.80; the gap reflects the structural difference between the Fuller (1987) error-in-variables prediction and Bayesian marginal-integration.
+**Key finding:** z-ASSE consistently improves over rank-ASSE for continuous-prior methods. The improvement is largest for SEV-based models — the asymmetric SEV error distribution creates a systematic offset between rank-matched marginal quantiles and within-group z-score positions. For the complete picture including all methods and both metrics, see the Comprehensive Scoreboard above.
 
----
-
----
 
 ## 7. Direct ASSE Optimisation via Heuristic Learning (`rfl_chiu.py`)
 
@@ -784,8 +691,6 @@ where both terms are computed via 40-pt Gauss–Hermite over the LogNormal prior
 
 **Finding:** CRPS optimisation converges to $\sigma_\varepsilon \approx 0.29$, which gives rank-ASSE = 12.65 — slightly worse than direct rank-ASSE optimisation (12.24). CRPS and rank-ASSE have **different optima**; CRPS is not a reliable proxy for rank-ASSE minimisation.
 
----
-
 ### 7.7 Evolution of Methods
 
 ```
@@ -825,8 +730,6 @@ rfl_burr_em.py          — Burr XII + EM-GMM: K-component Gaussian mixture prio
                           Mode A (sig>=0.15 constraint, K=1): sig=0.160, a=1.6, ASSE=4.09 (best)
                           AIC=157.73 vs SEV+INLA 155.76 (SEV+INLA preferred by AIC)
 ```
-
----
 
 ## 8. Standard Error Estimation (`ssla_se.py`)
 
@@ -916,8 +819,6 @@ print(f"SE(b1) = {se_full['se_b1']:.4f}  SE(sig_d) = {se_full['se_sig_d']:.4f}")
 | Implementation | External loop | Single function call |
 
 Reference: Rodemann J., Marquard A., Augustin T., Caprio M. (2026). *Self-Supervised Laplace Approximation for Bayesian Uncertainty Quantification*. TMLR. arXiv:2605.12208.
-
----
 
 ## 9. Burr XII Closed-Form Marginal MLE (`rfl_burr.py`, `rfl_burr2.py`)
 
@@ -1029,8 +930,6 @@ per-obs residual =   5.74    (SEV+INLA:   5.76)
 
 AIC slightly favours SEV+INLA. The 0.004-nats log-likelihood gain from the extra $a$ parameter is negligible. **`rfl_sev_inla.py` remains the recommended method** (per-obs residual=5.76, AIC=155.76, 5 params).
 
----
-
 ### 9.5 Version 4: `rfl_burr_em.py` — Burr XII + EM-GMM Prior
 
 **Key idea**: Instead of a parametric LogNormal prior on $\Delta_i$ (SEV+INLA / Burr+INLA), use a **$K$-component Gaussian mixture** and learn it jointly with the likelihood parameters via EM. This bridges the NPMLE approach (data-driven discrete mixing) with the Burr XII closed-form inner likelihood.
@@ -1098,34 +997,56 @@ Three constrained configurations were tested to escape the degenerate solution:
 
 **Interpretation**: Mode A achieves the best ASSE by finding a sharper per-observation posterior for $\Delta_i$ (small $\sigma = 0.160$, very mild Gamma prior $a=1.6$), but the AIC still slightly favours SEV+INLA. The $\sigma \geq 0.15$ constraint is heuristic — a formal regularisation framework (e.g., penalised likelihood) would be needed to justify this bound from first principles.
 
----
-
 ## 10. Conclusions
 
 ### 10.1 Summary of Results
 
-Seven estimation strategies were developed and evaluated on the Pascual & Meeker (1999) fatigue dataset ($n=75$, five stress levels). Three censoring scenarios are also compared — see Cross-Method Censoring Comparison above for full details.
+All methods evaluated on the Pascual & Meeker (1999) fatigue dataset ($n=75$, five stress levels, 15 per level). Two metrics are reported side-by-side — **rank-ASSE** (P&M 1999, marginal CDF calibration) and **z-ASSE** (Chiu 2005, within-group ordering). They are independent metrics on different scales; comparison is only valid within the same column. Lower = better.
 
-The key comparison metric is **ASSE(n=75)** = rank-matched prediction error (see Intro table for full definition). Lower = better.
+| Method | Source | Params | rank-ASSE | z-ASSE |
+|--------|--------|:------:|----------:|-------:|
+| **Method C-2 — LAD z-opt** (`rfl_chiu.py`) 🏆 | This work | 4 | — | **9.94** |
+| Method C-1 — OLS z-opt (`rfl_chiu.py`) | This work | 4 | — | 10.31 |
+| **Method B — direct rank-ASSE opt** (`rfl_chiu.py`) ⭐ | This work | 5 | **12.24** | — |
+| Chiu (2005) EIV | Literature | 5 | 12.41\* | 10.80 |
+| Burr XII + INLA (`rfl_burr_inla.py`) | This work | 6 | 12.78 | 11.92† |
+| Pascual & Meeker (1999), Nor–Nor | Literature | 5 | 12.84 | — |
+| Burr XII + EM-GMM (`rfl_burr_em.py`) | This work | 6 | 12.84 | 12.76‡ |
+| Normal + INLA (`rfl_inla.py`) | This work | 5 | 12.85 | 12.75 |
+| SEV + INLA (`rfl_sev_inla.py`) | This work | 5 | 13.02 | 11.50 |
+| SEV + MCEM (`rfl_mcem.py`) | This work | 5 | 15.75§ | 14.42 |
+| SEV + NPMLE (`rfl_sev.py`) | This work | 6 | 16.49 | — |
+| Normal + NPMLE (`rfl_profile.py`) | This work | 6 | 16.85 | — |
+| Spindel & Haibach (1981) | Literature | 6 | 17.35 | — |
+| Castillo & Hadi (1995) | Literature | 5 | 18.12 | — |
+| Castillo et al. (1985) | Literature | 4 | 20.27 | — |
+| Bastenaire (1972) | Literature | 5 | 20.52 | — |
+| Little & Ekvall (1981), model 2 | Literature | 3 | 31.17 | — |
+| Little & Ekvall (1981), model 1 | Literature | 3 | 41.13 | — |
 
-| Method | $f(Y\|\Delta)$ | $g(\Delta)$ | Params | ASSE(n=75)† | Z-Score ASSE |
-|--------|:--------------:|:-----------:|:------:|----------:|----------:|
-| Normal + NPMLE (`rfl_profile.py`) | Normal | Discrete (K=2) | 6 | 16.85 | — |
-| SEV + NPMLE (`rfl_sev.py`) | SEV | Discrete (K=2) | 6 | 16.49 | — |
-| **Burr XII v2** (`rfl_burr2.py`) | **SEV** | **Gamma (stress-dep.)** | **5** | — | — |
-| SEV + MCEM (`rfl_mcem.py`) | SEV | LogNormal | 5 | 15.75‡ | 14.422 |
-| **Chiu (2005) thesis** | Normal | error-in-variables | 5 | **10.80** | — |
-| Normal + INLA (`rfl_inla.py`) | Normal | LogNormal | 5 | 12.85 | 12.749 |
-| **SEV + INLA** (`rfl_sev_inla.py`) | **SEV** | **LogNormal** | **5** | 13.02 | **11.496** |
-| Burr XII + INLA (`rfl_burr_inla.py`) | SEV | LogNormal + Gamma | 6 | **12.78** | 11.924§ |
-| **Burr XII + EM-GMM Mode A** (`rfl_burr_em.py`) ⭐ | **SEV** | **GMM (K=1)** | **6** | 12.84 | 12.762¶ |
+> \* Chiu (2005) **rank-ASSE = 12.41** computed by this work using thesis parameters (Method A, `rfl_chiu.py`). The thesis value **10.80 is z-ASSE** — a different metric; do not compare to rank-ASSE column.  
+> † Burr+INLA z-ASSE uses approximate hardcoded parameters (`rfl_asse_zscore.py`).  
+> ‡ Burr+EM-GMM z-ASSE uses Normal GMM prior quantile $\hat\delta_{ij}=\mu_1+\sigma_1 z_{ij}$ ($\mu_1=0.526$, $\sigma_1=0.0185$); approximation only.  
+> § SEV+MCEM from hardcoded warm-start; fully converged MLE may differ.  
+> "—" in rank-ASSE for C-1/C-2: these methods optimise z-ASSE directly; rank-ASSE not separately computed.
 
-> † ASSE(n=75) = rank-matched prediction error per P&M Response (1999) definition. See intro table for full formula.  
-> ‡ SEV+MCEM ASSE computed from hardcoded warm-start parameters; see `rfl_asse_zscore.py`. Fully converged MLE may differ.  
-> § Burr+INLA z-score uses approximate hardcoded parameters; true rank-based ≈12.78 with fully optimised params.  
-> ¶ Burr+EM-GMM z-score uses Normal GMM prior quantile $\hat\delta_{ij}=\mu_1+\sigma_1 z_{ij}$ ($\mu_1=0.526$, $\sigma_1=0.0185$) instead of LogNormal. $\mathcal{N}(\mu_1,\sigma_1^2)$ does not respect $\Delta\in(0,S_j)$; the EM code truncates implicitly via the discrete grid $[0.002,\,0.670]$. Interpret as an approximation.
+**Censoring robustness** (§5.4, three scenarios [A]=0%, [B]=20%, [C]=37.3%):
 
----
+| Method | [A] Fitted MAE | [B] Fitted MAE | [C] Fitted MAE | [C] Status |
+|--------|:--------------:|:--------------:|:--------------:|:----------:|
+| Normal + INLA | 8.63 | n/a | n/a | ❌ $\hat\beta_1\to-20$ |
+| SEV + INLA | 5.76 | 5.29 | 17.97 | ❌ $\hat\beta_1\to-20$ |
+| **Burr+EM-GMM** ($a\geq1$) | **4.09** | **4.92** | **4.43** | **✅ stable** |
+
+**Key findings:**
+
+1. **rank-ASSE champion**: Method B (direct optimisation, `rfl_chiu.py`) = **12.24** — beats Chiu EIV (12.41) and all Bayesian integration methods.
+2. **z-ASSE champion**: Method C-2 LAD (`rfl_chiu.py`) = **9.94** — beats Chiu's thesis (10.80) by **8%**, by using LAD instead of OLS to directly minimise the SAE metric.
+3. **Chiu's 10.80 is z-ASSE, not rank-ASSE.** On rank-ASSE, Chiu EIV = 12.41; our Method B = 12.24 is better.
+4. **MLE ≠ ASSE minimisation**: Normal+INLA MLE achieves rank-ASSE = 12.85; Method B direct optimisation achieves 12.24 by choosing $\hat\sigma_\varepsilon = 0.258$ vs MLE's 0.131.
+5. **INLA-class** methods cluster at rank-ASSE ≈ 12.8–13.0, matching P&M's benchmark (12.84). Normal+INLA = 12.85 ✓.
+6. **NPMLE** (discrete prior K=2) is systematically worse (16.5–16.9) — coarse discrete $g(\Delta)$ distorts the marginal CDF shape.
+7. **Censoring**: only Burr+EM-GMM remains stable at 37.3% censoring; GH-based methods collapse.
 
 ### 10.2 Theoretical Comparison of Methods
 
@@ -1152,8 +1073,6 @@ Both MCEM and SEV+INLA use a continuous LogNormal $g(\Delta)$, but differ in how
 
 The 9-pt GH evaluates the integrand at optimal quadrature nodes centred at the per-observation posterior mode, achieving far higher accuracy than 200 random samples. The MC noise in MCEM also pollutes the M-step BFGS, preventing convergence to the true MLE; this partly explains the 1.88 log-unit gap between MCEM ($\ell \approx -74.76$) and SEV+INLA ($\ell = -72.88$).
 
----
-
 ### 10.3 Pros and Cons
 
 | Method | Strengths | Weaknesses |
@@ -1164,8 +1083,6 @@ The 9-pt GH evaluates the integrand at optimal quadrature nodes centred at the p
 | **Normal + INLA** (`rfl_inla.py`) | Accurate GH integration; fast NM/SA convergence | Symmetric Normal misspecifies left-skewed log-life; ASSE 8.63 |
 | **SEV + INLA** (`rfl_sev_inla.py`) | Best per-obs residual (5.76) among GH methods; physically correct conditional; deterministic | Degenerates at 37.3% censoring ($\hat\beta_1\to-20$, same as Normal+INLA); SE not yet Profile-calibrated |
 | **Burr XII + EM-GMM** (`rfl_burr_em.py`) | Best per-obs residual (4.09); **robust under heavy censoring** ([C] per-obs residual=4.43 vs SEV+INLA 17.97); no Laplace curvature bias | Degenerate MLE without $\sigma,a$ constraints; heuristic bounds; AIC still favours SEV+INLA |
-
----
 
 ### 10.4 Limitations
 
@@ -1181,8 +1098,6 @@ The 9-pt GH evaluates the integrand at optimal quadrature nodes centred at the p
 
 6. **Convergence of MCEM**: the MC log-likelihood oscillates even at M=200; convergence is assessed by parameter stability rather than the standard EM monotone likelihood criterion. A Rao-Blackwellised estimator or larger M would be needed for formal convergence guarantees.
 
----
-
 ### 10.5 Future Directions
 
 - **EM-GMM regularisation**: the Mode A ($\sigma \geq 0.15$) constraint in `rfl_burr_em.py` is heuristic. A principled approach — penalised likelihood, minimum-description-length, or LOO validation — is needed to confirm ASSE=4.09 generalises out-of-sample.
@@ -1191,8 +1106,6 @@ The 9-pt GH evaluates the integrand at optimal quadrature nodes centred at the p
 - **K-mixture with LOO selection**: use PSIS-LOO (Direction A) as the model selection criterion for K in Direction C, instead of AIC/BIC — this would give a truly out-of-sample justified K.
 - **Censoring regularisation for EM-GMM**: a proper Gamma hyperprior on $a$ (e.g., $a \sim \text{Gamma}(\alpha_0, \beta_0)$ with $\alpha_0 > 1$) would provide principled regularisation instead of the heuristic $a \geq 1$ bound.
 - **IS-corrected ILA for GH bias quantification**: validate the accuracy of the per-observation 9-pt Gauss–Hermite approximation in SEV+INLA using the importance-sampling correction proposed by Lai, Margossian & Sheldon (2026, arXiv:2605.20345). The single vs multiple Laplace gap is only 0.02 nats on the P&M data, suggesting the 1D $\Delta_i$ integral is already well-approximated — but IS correction could systematically quantify any residual bias, particularly in the near-degenerate $\hat\sigma_\Delta \approx 0.033$ regime where the LogNormal $g(\Delta)$ is extremely concentrated.
-
----
 
 ## 11. Structural Extensions (2026-05-27)
 
@@ -1219,9 +1132,7 @@ This is the prediction a new specimen at stress $S_i$ would get — no condition
 
 The **Posterior Sharpening Bonus** = In-sample ASSE − Prior-LOO ASSE measures the benefit of conditioning on $y_i$ itself to estimate $\Delta_i$.  All methods achieve **Prior-LOO ASSE ≈ 40**, identical to the stress-level marginal mean — no method beats the mean for predicting a new specimen.
 
-> **Implication:** The ASSE=5.76 for SEV+INLA is not a prediction-quality metric; it measures how well the model reconstructs observations it was fitted on. The $\hat\sigma_\Delta \approx 0.033$ near-degeneracy makes the posterior of $\Delta_i \mid y_i$ extremely sharp, concentrating the fitted value close to $y_i$ — a form of double-dipping.
-
----
+> **Implication:** The Fitted MAE = 5.76 for SEV+INLA is not a prediction-quality metric; it measures how well the model reconstructs observations it was fitted on (in-sample double-dipping). The $\hat\sigma_\Delta \approx 0.033$ near-degeneracy makes the posterior of $\Delta_i \mid y_i$ extremely sharp, concentrating the fitted value close to $y_i$. This is why Fitted MAE $\ll$ rank-ASSE: the former rewards posterior sharpness, the latter tests marginal calibration.
 
 ### 11.2 Direction B — Posterior Predictive ASSE ($\theta$ Integrated Out)
 
@@ -1253,8 +1164,6 @@ $$\text{ASSE}_\text{Bayes} = \mathbb{E}_{\theta \sim p(\theta|y)}\!\left[\sum_i\
 
 > **Implication:** Integrating out $\theta$ adds only ≈16% to the ASSE point estimate. The dominant uncertainty is not global parameter estimation but the per-observation latent variable $\Delta_i$. LOO ASSE ≈ 40 $\gg$ 5.76 — the in-sample reduction is driven by the $\Delta_i$ posterior, not $\theta$ SE.
 
----
-
 ### 11.3 Direction C — K-Component LogNormal Mixture for $g(\Delta)$
 
 **File:** `rfl_sev_inla_mix.py`  
@@ -1283,8 +1192,6 @@ $$\text{ASSE}_\text{Bayes} = \mathbb{E}_{\theta \sim p(\theta|y)}\!\left[\sum_i\
 K=3 wins on AIC (ΔAIC = −8.2 vs K=1) and ASSE, but **BIC favours K=1** (BIC penalises 6 extra parameters; at $n=75$ this is decisive). Components 2 and 3 are nearly co-located ($E[\Delta] \approx 0.467$ vs $0.465$) — K=3 likely overfits, effectively acting as a 2-component model with a degenerate third atom.
 
 > **Implication:** $g(\Delta)$ shows mild departure from unimodality (AIC-optimal K=3), consistent with the NPMLE BIC selecting K=3 for the SEV model. However, $n=75$ is insufficient to reliably distinguish K=2 from K=3. The Laplace-GH K=1 ASSE=5.76 remains the best calibrated estimate under the unimodal prior.
-
----
 
 ## Appendix A: File Structure
 
@@ -1319,8 +1226,6 @@ rfl-inla/
 ├── requirements.txt
 └── README.md
 ```
-
----
 
 ## Appendix B: Quick Start
 
@@ -1390,8 +1295,6 @@ python rfl_chiu.py
 # 18. Marginal CRPS (energy score) optimisation; KM-based censoring framework
 python rfl_crps.py
 ```
-
----
 
 ## References
 
@@ -1499,8 +1402,6 @@ python rfl_crps.py
 
 29. **Koenker, R. and Bassett, G.** (1978). "Regression quantiles." *Econometrica*, **46**(1), 33–50.
     > Foundational paper for LAD (least absolute deviations) / $L_1$ regression as the special case of quantile regression at $\tau = 0.5$. Method C-2 in `rfl_chiu.py` applies LAD to fit $(\beta_0, \beta_1)$ given the within-group z-score mapped fatigue limits $\hat\Delta_t = \exp(\mu_\Delta + \sigma_\Delta z_t)$. Because the z-ASSE metric is a sum of absolute errors (SAE), LAD is the natural minimiser — OLS (minimising SSE) used in the original Chiu (2005) thesis is suboptimal for this metric. Combined with Nelder-Mead over $(\mu_\Delta, \sigma_\Delta)$, C-2 achieves z-ASSE = 9.94, an 8% improvement over the thesis value of 10.80.
-
----
 
 ## Licence
 
